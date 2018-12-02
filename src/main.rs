@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::option::Option;
 use std::io::prelude::*;
 use std::collections::{BTreeSet, BTreeMap};
 
@@ -10,6 +11,45 @@ fn read_file(filename: &str) -> String {
     .expect("something went wrong reading the file");
 
   contents
+}
+
+fn number_of_different_letters(a: &str, b: &str) -> i32 {
+  let mut diffs = 0;
+
+  for ch in a.chars().zip(b.chars()) {
+    if ch.0 != ch.1 {
+      diffs += 1;
+    }
+  }
+
+  diffs
+}
+
+fn find_similar<'a>(list: &Vec<&'a str>, s: &'a str) -> Option<&'a str> {
+  for l in list {
+    if number_of_different_letters(l, s) == 1 {
+      return Some(l);
+    }
+  }
+
+  None
+}
+
+fn day2_problem2() {
+  let filename = "./data/input_2-1.txt";
+
+  let input = read_file(filename);
+  let serials = input
+    .split("\n")
+    .filter(|v| *v != "")
+    .collect();
+
+  for serial in &serials {
+    match find_similar(&serials, serial) {
+      Some(v) => println!("{} is close to {}", serial, v),
+      None => (),
+    }
+  }
 }
 
 fn count_letters(s: &str) -> BTreeMap<&str, i32> {
@@ -47,7 +87,7 @@ fn has_one_letter_thrice(s: &str) -> bool {
 }
 
 fn day2_problem1() {
-    let filename = "./data/input_2-1.txt";
+  let filename = "./data/input_2-1.txt";
 
   let input = read_file(filename);
   let serials = input
@@ -71,11 +111,12 @@ fn day2_problem1() {
 }
 
 fn main() {
-  day2_problem1();
+  day2_problem2();
 
   println!("Past problems:");
   day1_problem1();
   day1_problem2();
+  day2_problem1();
 }
 
 #[cfg(test)]
