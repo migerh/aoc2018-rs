@@ -2,6 +2,8 @@
 name = "y2018"
 version = "0.1.0"
 authors = ["Michael Gerhaeuser <michael.gerhaeuser@gmail.com>"]
-edition = "2018"
+
+# uncomment once 2018 is stable
+# edition = "2018"
 
 [dependencies]
