@@ -2,6 +2,9 @@ use std::str::FromStr;
 use std::num::ParseIntError;
 use std::collections::BTreeMap;
 
+
+use regex::Regex;
+
 #[derive(Debug)]
 struct Box {
   pub x: u32,
@@ -15,52 +18,18 @@ impl FromStr for Box {
   type Err = ParseIntError;
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
-    let mut split = s.split("@");
-    let id_content = match split.next() {
-      Some(v) => v,
-      None => panic!("Parse error")
-    };
+    lazy_static!{
+      static ref RE: Regex = Regex::new(r"\#(\d+) @ (\d+),(\d+): (\d+)x(\d+)").unwrap();
+    }
+    let cap = RE.captures(s).unwrap();
 
-    let mut id_number = id_content.split("#");
-    id_number.next();
-    let id = match id_number.next() {
-      Some(v) => v.trim().parse::<u32>().unwrap(),
-      None => panic!("Parse error")
-    };
+    let parse = |v: &str| v.parse::<u32>().unwrap();
 
-    let mut data = match split.next() {
-      Some(v) => v.split(":"),
-      None => panic!("Parse error")
-    };
-
-    let coordinates = match data.next() {
-      Some(v) => v.trim(),
-      None => panic!("Parse error")
-    };
-    let dimension = match data.next() {
-      Some(v) => v.trim(),
-      None => panic!("Parse error")
-    };
-
-    let mut position_split = coordinates.split(",");
-    let x = match position_split.next() {
-      Some(v) => v.parse::<u32>().unwrap(),
-      None => panic!("Parse error")
-    };
-    let y = match position_split.next() {
-      Some(v) => v.parse::<u32>().unwrap(),
-      None => panic!("Parse error")
-    };
-
-    let mut dimension_split = dimension.split("x");
-    let w = match dimension_split.next() {
-      Some(v) => v.parse::<u32>().unwrap(),
-      None => panic!("Parse error")
-    };
-    let h = match dimension_split.next() {
-      Some(v) => v.parse::<u32>().unwrap(),
-      None => panic!("Parse error")
-    };
+    let id = parse(&cap[1]);
+    let x = parse(&cap[2]);
+    let y = parse(&cap[3]);
+    let w = parse(&cap[4]);
+    let h = parse(&cap[5]);
 
     Ok(Box { id, x, y, w, h })
   }
