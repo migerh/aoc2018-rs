@@ -1,7 +1,6 @@
 use std::str::FromStr;
 use std::num::ParseIntError;
 use regex::Regex;
-use std::cmp::Ordering;
 use std::collections::BTreeMap;
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
@@ -20,7 +19,7 @@ struct Timestamp {
   pub minute: u32,
 }
 
-#[derive(Debug, Eq)]
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
 struct Record {
   pub time: Timestamp,
   pub action: Action,
@@ -77,24 +76,6 @@ impl FromStr for Record {
     }
 
     Ok(Record { time, action })
-  }
-}
-
-impl Ord for Record {
-  fn cmp(&self, other: &Record) -> Ordering {
-    self.time.cmp(&other.time)
-  }
-}
-
-impl PartialOrd for Record {
-  fn partial_cmp(&self, other: &Record) -> Option<Ordering> {
-    Some(self.cmp(other))
-  }
-}
-
-impl PartialEq for Record {
-  fn eq(&self, other: &Record) -> bool {
-    self.time == other.time
   }
 }
 
