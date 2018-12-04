@@ -7,7 +7,7 @@ use std::error::Error;
 use std::fmt;
 
 #[derive(Debug)]
-struct ParseError {
+pub struct ParseError {
   pub what: String
 }
 
@@ -126,21 +126,18 @@ impl FromStr for Record {
   }
 }
 
-fn parse_and_sort() -> Vec<Record> {
+fn parse_and_sort() -> Result<Vec<Record>, ParseError> {
   let input = include_str!("./data/input.txt");
 
   let mut records = input
     .split("\n")
     .filter(|v| *v != "")
-    .map(|v| match Record::from_str(v) {
-      Ok(v) => v,
-      _ => panic!("Parse error")
-    })
-    .collect::<Vec<_>>();
+    .map(|v| Record::from_str(v))
+    .collect::<Result<Vec<Record>, _>>()?;
 
   records.sort();
 
-  records
+  Ok(records)
 }
 
 fn get_sleeping_patterns(records: &Vec<Record>) -> BTreeMap<(u32, u32), u32> {
@@ -166,8 +163,8 @@ fn get_sleeping_patterns(records: &Vec<Record>) -> BTreeMap<(u32, u32), u32> {
   map
 }
 
-pub fn problem1() -> u32 {
-  let records = parse_and_sort();
+pub fn problem1() -> Result<u32, ParseError> {
+  let records = parse_and_sort()?;
   let sleeping_patterns = get_sleeping_patterns(&records);
 
   let mut total_minutes_per_guard: BTreeMap<u32, u32> = BTreeMap::new();
@@ -202,11 +199,11 @@ pub fn problem1() -> u32 {
   let result = guard_who_slept_most * minute_that_guard_slept_most;
   println!("Solution: {}", result);
 
-  result
+  Ok(result)
 }
 
-pub fn problem2() -> u32{
-  let records = parse_and_sort();
+pub fn problem2() -> Result<u32, ParseError> {
+  let records = parse_and_sort()?;
   let sleeping_patterns = get_sleeping_patterns(&records);
 
   let mut guard = 0;
@@ -223,7 +220,7 @@ pub fn problem2() -> u32{
   let result = guard * minute;
   println!("Solution: {}", result);
 
-  result
+  Ok(result)
 }
 
 #[cfg(test)]
@@ -232,11 +229,11 @@ mod tests {
 
   #[test]
   fn check_problem1_result() {
-    assert_eq!(problem1(), 103720);
+    assert_eq!(problem1().unwrap(), 103720);
   }
 
   #[test]
   fn check_problem2_result() {
-    assert_eq!(problem2(), 110913);
+    assert_eq!(problem2().unwrap(), 110913);
   }
 }

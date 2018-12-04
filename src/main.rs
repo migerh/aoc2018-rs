@@ -8,7 +8,7 @@ mod day3;
 mod day4;
 
 fn main() {
-  day4::problem2();
+  day4::problem2().unwrap();
 
   println!("Past problems:");
   if false {
@@ -21,6 +21,6 @@ fn main() {
     day3::problem1();
     day3::problem2();
 
-    day4::problem1();
+    day4::problem1().unwrap();
   }
 }
