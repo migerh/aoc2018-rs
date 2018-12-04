@@ -1,7 +1,44 @@
-use std::str::FromStr;
 use std::num::ParseIntError;
+use std::str::FromStr;
 use regex::Regex;
 use std::collections::BTreeMap;
+
+use std::error::Error;
+use std::fmt;
+
+#[derive(Debug)]
+struct ParseError {
+  pub what: String
+}
+
+impl ParseError {
+  fn new(s: &str) -> ParseError {
+    let what = s.to_string();
+    ParseError { what }
+  }
+}
+
+impl fmt::Display for ParseError {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{}", self.what)
+  }
+}
+
+impl Error for ParseError {
+  fn description(&self) -> &str {
+    "Error while parsing input"
+  }
+
+  fn cause(&self) -> Option<&Error> {
+    None
+  }
+}
+
+impl From<ParseIntError> for ParseError {
+  fn from(_error: ParseIntError) -> Self {
+    ParseError::new("Unable to parse integer")
+  }
+}
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
 enum Action {
@@ -25,8 +62,37 @@ struct Record {
   pub action: Action,
 }
 
+impl FromStr for Action {
+  type Err = ParseError;
+
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+    lazy_static!{
+      static ref REFallsAsleep: Regex = Regex::new(r"falls asleep").unwrap();
+      static ref REWakesUp: Regex = Regex::new(r"wakes up").unwrap();
+      static ref REStarts: Regex = Regex::new(r"Guard \#(\d+) begins shift").unwrap();
+    }
+
+    if REFallsAsleep.is_match(s) {
+      return Ok(Action::FallsAsleep);
+    }
+
+    if REWakesUp.is_match(s) {
+      return Ok(Action::WakesUp);
+    }
+
+    if REStarts.is_match(s) {
+      let cap = REStarts.captures(s).unwrap();
+      let parse = |v: &str| v.parse::<u32>().unwrap();
+
+      return Ok(Action::Starts(parse(&cap[1])));
+    }
+
+    Err(ParseError::new("Could not parse action"))
+  }
+}
+
 impl FromStr for Timestamp {
-  type Err = ParseIntError;
+  type Err = ParseError;
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     lazy_static!{
@@ -34,46 +100,24 @@ impl FromStr for Timestamp {
     }
     let cap = RE.captures(s).unwrap();
 
-    let parse = |v: &str| v.parse::<u32>().unwrap();
+    let parse = |v: &str| v.parse::<u32>();
 
-    let year = parse(&cap[1]);
-    let month = parse(&cap[2]);
-    let day = parse(&cap[3]);
-    let hour = parse(&cap[4]);
-    let minute = parse(&cap[5]);
+    let year = parse(&cap[1])?;
+    let month = parse(&cap[2])?;
+    let day = parse(&cap[3])?;
+    let hour = parse(&cap[4])?;
+    let minute = parse(&cap[5])?;
 
     Ok(Timestamp { day, month, year, hour, minute })
   }
 }
 
 impl FromStr for Record {
-  type Err = ParseIntError;
+  type Err = ParseError;
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     let time = Timestamp::from_str(s)?;
-
-    lazy_static!{
-      static ref REFallsAsleep: Regex = Regex::new(r"falls asleep").unwrap();
-      static ref REWakesUp: Regex = Regex::new(r"wakes up").unwrap();
-      static ref REStarts: Regex = Regex::new(r"Guard \#(\d+) begins shift").unwrap();
-    }
-
-    let mut action = Action::WakesUp;
-
-    if REFallsAsleep.is_match(s) {
-      action = Action::FallsAsleep;
-    }
-
-    if REWakesUp.is_match(s) {
-      action = Action::WakesUp;
-    }
-
-    if REStarts.is_match(s) {
-      let cap = REStarts.captures(s).unwrap();
-      let parse = |v: &str| v.parse::<u32>().unwrap();
-
-      action = Action::Starts(parse(&cap[1]));
-    }
+    let action = Action::from_str(s)?;
 
     Ok(Record { time, action })
   }
