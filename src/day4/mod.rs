@@ -138,7 +138,7 @@ fn get_sleeping_patterns(records: &Vec<Record>) -> BTreeMap<(u32, u32), u32> {
   map
 }
 
-pub fn problem1() {
+pub fn problem1() -> u32 {
   let records = parse_and_sort();
   let sleeping_patterns = get_sleeping_patterns(&records);
 
@@ -171,10 +171,13 @@ pub fn problem1() {
   }
 
   println!("And he slept the most in minute {}", minute_that_guard_slept_most);
-  println!("Solution: {}", guard_who_slept_most * minute_that_guard_slept_most);
+  let result = guard_who_slept_most * minute_that_guard_slept_most;
+  println!("Solution: {}", result);
+
+  result
 }
 
-pub fn problem2() {
+pub fn problem2() -> u32{
   let records = parse_and_sort();
   let sleeping_patterns = get_sleeping_patterns(&records);
 
@@ -189,5 +192,23 @@ pub fn problem2() {
     }
   }
 
-  println!("Solution: {}", guard * minute);
+  let result = guard * minute;
+  println!("Solution: {}", result);
+
+  result
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn check_problem1_result() {
+    assert_eq!(problem1(), 103720);
+  }
+
+  #[test]
+  fn check_problem2_result() {
+    assert_eq!(problem2(), 110913);
+  }
 }
