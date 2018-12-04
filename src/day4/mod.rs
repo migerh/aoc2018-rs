@@ -1,44 +1,8 @@
-use std::num::ParseIntError;
 use std::str::FromStr;
 use regex::Regex;
 use std::collections::BTreeMap;
 
-use std::error::Error;
-use std::fmt;
-
-#[derive(Debug)]
-pub struct ParseError {
-  pub what: String
-}
-
-impl ParseError {
-  fn new(s: &str) -> ParseError {
-    let what = s.to_string();
-    ParseError { what }
-  }
-}
-
-impl fmt::Display for ParseError {
-  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    write!(f, "{}", self.what)
-  }
-}
-
-impl Error for ParseError {
-  fn description(&self) -> &str {
-    "Error while parsing input"
-  }
-
-  fn cause(&self) -> Option<&Error> {
-    None
-  }
-}
-
-impl From<ParseIntError> for ParseError {
-  fn from(_error: ParseIntError) -> Self {
-    ParseError::new("Unable to parse integer")
-  }
-}
+use super::utils::{preprocess_input, ParseError};
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
 enum Action {
@@ -129,9 +93,8 @@ impl FromStr for Record {
 fn parse_and_sort() -> Result<Vec<Record>, ParseError> {
   let input = include_str!("./data/input.txt");
 
-  let mut records = input
-    .split("\n")
-    .filter(|v| *v != "")
+  let mut records = preprocess_input(input)
+    .into_iter()
     .map(|v| Record::from_str(v))
     .collect::<Result<Vec<Record>, _>>()?;
 
