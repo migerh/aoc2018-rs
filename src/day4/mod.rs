@@ -115,23 +115,79 @@ fn parse_and_sort() -> Vec<Record> {
   records
 }
 
-pub fn problem1() {
-  let records = parse_and_sort();
+fn get_sleeping_patterns(records: &Vec<Record>) -> BTreeMap<(u32, u32), u32> {
   let mut map = BTreeMap::new();
   let mut current_guard: u32 = 0;
   let mut falls_asleep_minute = 0;
 
-  for record in &records {
+  for record in records {
     match record.action {
       Action::Starts(guard) => current_guard = guard,
       Action::FallsAsleep => falls_asleep_minute = record.time.minute,
       Action::WakesUp => {
         for i in falls_asleep_minute..record.time.minute {
-          map.insert((current_guard, i), true);
+          map
+            .entry((current_guard, i))
+            .and_modify(|v| *v += 1)
+            .or_insert(1);
         }
       }
     }
   }
 
-  println!("{:?}", records);
+  map
+}
+
+pub fn problem1() {
+  let records = parse_and_sort();
+  let sleeping_patterns = get_sleeping_patterns(&records);
+
+  let mut total_minutes_per_guard: BTreeMap<u32, u32> = BTreeMap::new();
+  for (key, value) in &sleeping_patterns {
+    total_minutes_per_guard
+      .entry(key.0)
+      .and_modify(|v: &mut u32| *v = *v + *value)
+      .or_insert(*value);
+  }
+
+  let mut guard_who_slept_most = 0;
+  let mut minutes_that_guard_slept = 0;
+
+  for guard in total_minutes_per_guard {
+    if guard.1 > minutes_that_guard_slept {
+      guard_who_slept_most = guard.0;
+      minutes_that_guard_slept = guard.1;
+    }
+  }
+  println!("Guard {} slept a total of {} minutes", guard_who_slept_most, minutes_that_guard_slept);
+
+  let mut minute_that_guard_slept_most = 0;
+  let mut number_of_times_that_guard_slept_in_that_minute = 0;
+  for (key, value) in &sleeping_patterns {
+    if key.0 == guard_who_slept_most && number_of_times_that_guard_slept_in_that_minute < *value {
+      minute_that_guard_slept_most = key.1;
+      number_of_times_that_guard_slept_in_that_minute = *value;
+    }
+  }
+
+  println!("And he slept the most in minute {}", minute_that_guard_slept_most);
+  println!("Solution: {}", guard_who_slept_most * minute_that_guard_slept_most);
+}
+
+pub fn problem2() {
+  let records = parse_and_sort();
+  let sleeping_patterns = get_sleeping_patterns(&records);
+
+  let mut guard = 0;
+  let mut total_minutes = 0;
+  let mut minute = 0;
+  for (key, value) in &sleeping_patterns {
+    if *value > total_minutes {
+      guard = key.0;
+      total_minutes = *value;
+      minute = key.1;
+    }
+  }
+
+  println!("Solution: {}", guard * minute);
 }
