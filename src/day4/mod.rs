@@ -81,10 +81,13 @@ impl FromStr for Action {
     }
 
     if REStarts.is_match(s) {
-      let cap = REStarts.captures(s).unwrap();
-      let parse = |v: &str| v.parse::<u32>().unwrap();
+      let cap = match REStarts.captures(s) {
+        Some(capture) => capture,
+        None => Err(ParseError::new("Could not parse action"))?
+      };
+      let guard_id = cap[1].parse::<u32>()?;
 
-      return Ok(Action::Starts(parse(&cap[1])));
+      return Ok(Action::Starts(guard_id));
     }
 
     Err(ParseError::new("Could not parse action"))
