@@ -119,6 +119,6 @@ mod tests {
 
   #[test]
   fn problem1_returns_correct_result() {
-    assert_eq!(problem1(), 10);
+    assert_eq!(problem1(), 9078);
   }
 }
