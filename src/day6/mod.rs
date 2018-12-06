@@ -3,7 +3,10 @@ use std::option::Option;
 
 use super::utils::{preprocess_input, ParseError};
 
-fn parse_coordinate(s: &str) -> Result<(i32, i32), ParseError> {
+type Coords = (i32, i32);
+type Location = (i32, i32);
+
+fn parse_coordinate(s: &str) -> Result<Coords, ParseError> {
   let mut split = s.split(",");
 
   let x_str = match split.next() {
@@ -22,11 +25,11 @@ fn parse_coordinate(s: &str) -> Result<(i32, i32), ParseError> {
   Ok((x, y))
 }
 
-fn manhattan_distance(p: (i32, i32), q: (i32, i32)) -> i32 {
+fn manhattan_distance(p: Location, q: Coords) -> i32 {
   (p.0 - q.0).abs() + (p.1 - q.1).abs()
 }
 
-fn find_closest_point(q: (i32, i32), points: &Vec<(i32, i32)>) -> (Option<(i32, i32)>, i32) {
+fn find_closest_point(q: Location, points: &Vec<Coords>) -> (Option<Coords>, i32) {
   let mut closest_point = Some((0, 0));
   let mut closest_distance = 1000000;
   for p in points {
@@ -43,7 +46,7 @@ fn find_closest_point(q: (i32, i32), points: &Vec<(i32, i32)>) -> (Option<(i32, 
   (closest_point, closest_distance)
 }
 
-fn calculate_closest_point_map(coords: &Vec<(i32, i32)>, start: (i32, i32), end: (i32, i32)) -> BTreeMap<(i32, i32), (Option<(i32, i32)>, i32)> {
+fn calculate_closest_point_map(coords: &Vec<Coords>, start: Location, end: Location) -> BTreeMap<Location, (Option<Coords>, i32)> {
   let mut map = BTreeMap::new();
   for x in start.0..end.0 {
     for y in start.1..end.1 {
@@ -54,7 +57,7 @@ fn calculate_closest_point_map(coords: &Vec<(i32, i32)>, start: (i32, i32), end:
   map
 }
 
-fn is_infinite(p: (i32, i32)) -> bool {
+fn is_infinite(p: Location) -> bool {
   p.0 == 0 || p.1 == 0 || p.0 == 499 || p.1 == 499
 }
 
@@ -64,7 +67,7 @@ pub fn problem1() -> Result<i32, ParseError> {
   let coords = preprocess_input(input)
     .into_iter()
     .map(|v| parse_coordinate(v))
-    .collect::<Result<Vec<(i32, i32)>, _>>()?;
+    .collect::<Result<Vec<Coords>, _>>()?;
 
   let map = calculate_closest_point_map(&coords, (0, 0), (500, 500));
 
@@ -101,7 +104,7 @@ pub fn problem2() -> Result<usize, ParseError> {
   let coords = preprocess_input(input)
     .into_iter()
     .map(|v| parse_coordinate(v))
-    .collect::<Result<Vec<(i32, i32)>, _>>()?;
+    .collect::<Result<Vec<Coords>, _>>()?;
 
   let mut list_of_good_points = vec![];
   for x in 0..500 {
