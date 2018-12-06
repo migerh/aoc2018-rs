@@ -7,13 +7,16 @@ mod day2;
 mod day3;
 mod day4;
 mod day5;
+mod day6;
 mod utils;
 
-fn main() {
-  day5::problem2();
+use utils::ParseError;
 
-  println!("Past problems:");
+fn run() -> Result<(), ParseError> {
+  day6::problem1()?;
+
   if false {
+    println!("Past problems:");
     day1::problem1();
     day1::problem2();
 
@@ -23,9 +26,19 @@ fn main() {
     day3::problem1();
     day3::problem2();
 
-    day4::problem1().unwrap();
-    day4::problem2().unwrap();
+    day4::problem1()?;
+    day4::problem2()?;
 
     day5::problem1();
+    day5::problem2();
+  }
+
+  Ok(())
+}
+
+fn main() {
+  match run() {
+    Err(err) => println!("Error occurred: {}", err),
+    _ => {}
   }
 }
