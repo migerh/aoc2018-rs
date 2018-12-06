@@ -43,7 +43,7 @@ fn find_closest_point(q: (i32, i32), points: &Vec<(i32, i32)>) -> (Option<(i32, 
   (closest_point, closest_distance)
 }
 
-fn calculate_map(coords: &Vec<(i32, i32)>, start: (i32, i32), end: (i32, i32)) -> BTreeMap<(i32, i32), (Option<(i32, i32)>, i32)> {
+fn calculate_closest_point_map(coords: &Vec<(i32, i32)>, start: (i32, i32), end: (i32, i32)) -> BTreeMap<(i32, i32), (Option<(i32, i32)>, i32)> {
   let mut map = BTreeMap::new();
   for x in start.0..end.0 {
     for y in start.1..end.1 {
@@ -66,7 +66,7 @@ pub fn problem1() -> Result<i32, ParseError> {
     .map(|v| parse_coordinate(v))
     .collect::<Result<Vec<(i32, i32)>, _>>()?;
 
-  let map = calculate_map(&coords, (0, 0), (500, 500));
+  let map = calculate_closest_point_map(&coords, (0, 0), (500, 500));
 
   let mut area_map = BTreeMap::new();
   for (point, (closest_point, _distance)) in &map {
@@ -94,6 +94,36 @@ pub fn problem1() -> Result<i32, ParseError> {
 }
 
 
+
+pub fn problem2() -> Result<usize, ParseError> {
+  let input = include_str!("./data/input.txt");
+
+  let coords = preprocess_input(input)
+    .into_iter()
+    .map(|v| parse_coordinate(v))
+    .collect::<Result<Vec<(i32, i32)>, _>>()?;
+
+  let mut list_of_good_points = vec![];
+  for x in 0..500 {
+    for y in 0..500 {
+      let mut sum_of_distances = 0;
+      for p in &coords {
+        sum_of_distances += manhattan_distance((x, y), *p);
+      }
+
+      if sum_of_distances < 10000 {
+        list_of_good_points.push((x, y));
+      }
+    }
+  }
+
+  let result = list_of_good_points.len();
+  println!("Area of good points: {}", result);
+
+  Ok(result)
+}
+
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -108,5 +138,10 @@ mod tests {
   #[test]
   fn problem1_result_is_correct() {
     assert_eq!(problem1().unwrap(), 4398);
+  }
+
+  #[test]
+  fn problem2_result_is_correct() {
+    assert_eq!(problem2().unwrap(), 39560);
   }
 }
