@@ -5,6 +5,13 @@ use super::utils::{preprocess_input, ParseError};
 
 type Rule = (char, char);
 
+fn get_char(s: &str) -> Result<char, ParseError> {
+  match s.chars().next() {
+    Some(v) => Ok(v),
+    None => Err(ParseError::new("Could not find vertex"))?
+  }
+}
+
 fn parse_edge(s: &str) -> Result<Rule, ParseError> {
     lazy_static!{
       static ref REEdge: Regex = Regex::new(r"Step (.) must be finished before step (.) can begin\.").unwrap();
@@ -15,14 +22,8 @@ fn parse_edge(s: &str) -> Result<Rule, ParseError> {
       None => Err(ParseError::new("Could not parse rule"))?
     };
 
-    let from = match cap[1].chars().next() {
-      Some(v) => v,
-      None => Err(ParseError::new("Could not find start edge"))?
-    };
-    let to = match cap[2].chars().next() {
-      Some(v) => v,
-      None => Err(ParseError::new("Could not find end edge"))?
-    };
+    let from = get_char(&cap[1])?;
+    let to = get_char(&cap[2])?;
 
     Ok((from, to))
 }
@@ -43,7 +44,6 @@ fn find_root(rules: &Vec<Rule>) -> Vec<char> {
 
   for r in rules {
     root_letters.insert(r.0);
-    root_letters.insert(r.1);
   }
 
   for r in rules {
@@ -53,20 +53,23 @@ fn find_root(rules: &Vec<Rule>) -> Vec<char> {
   root_letters.into_iter().collect()
 }
 
-fn find_next_steps(rules: &Vec<Rule>, step: char, already_visited: &Vec<char>) -> Vec<char> {
+fn all_dependencies_done(rules: &Vec<Rule>, task: char, done: &Vec<char>) -> bool {
+  let mut all_dependencies_visited = true;
+  for s in rules {
+    if task == s.1 && !done.contains(&s.0) {
+      all_dependencies_visited = false;
+    }
+  }
+
+  all_dependencies_visited
+}
+
+fn find_next_steps(rules: &Vec<Rule>, task: char, done: &Vec<char>) -> Vec<char> {
   let mut next_letters = BTreeSet::new();
 
   for r in rules {
-    if r.0 == step {
-      let mut all_dependencies_visited = true;
-      for s in rules {
-        if r.1 == s.1 && !already_visited.contains(&s.0) {
-          all_dependencies_visited = false;
-        }
-      }
-      if all_dependencies_visited {
-        next_letters.insert(r.1);
-      }
+    if r.0 == task && all_dependencies_done(rules, r.1, done) {
+      next_letters.insert(r.1);
     }
   }
 
@@ -129,18 +132,10 @@ fn find_open_tasks(rules: &Vec<Rule>, done: &Vec<char>, in_work: &Vec<char>) -> 
     }
   }
 
-  for r in rules {
-    if !already_assigned(r.1) {
-      let mut all_dependencies_resolved = true;
-      for s in rules {
-        if r.1 == s.1 && !done.contains(&s.0) {
-          all_dependencies_resolved = false;
-        }
-      }
-
-      if all_dependencies_resolved {
-        next_letters.insert(r.1);
-      }
+  for (_, t) in rules {
+    let task = *t;
+    if !already_assigned(task) && all_dependencies_done(rules, task, done) {
+      next_letters.insert(task);
     }
   }
   next_letters
