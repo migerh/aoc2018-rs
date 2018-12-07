@@ -74,7 +74,7 @@ fn find_next_steps(rules: &Vec<Rule>, step: char, already_visited: &Vec<char>) -
 }
 
 fn find_next_letters(rules: &Vec<Rule>, letters: &mut Vec<char>, already_visited: &mut Vec<char>) -> Vec<char> {
-  if letters.len() == 0 {
+  if letters.is_empty() {
     return vec![];
   }
 
@@ -90,7 +90,7 @@ fn find_next_letters(rules: &Vec<Rule>, letters: &mut Vec<char>, already_visited
 
 fn traverse(rules: &Vec<Rule>, letters: &mut Vec<char>, already_visited: &mut Vec<char>) {
   let mut next_steps = find_next_letters(rules, letters, already_visited);
-  if next_steps.len() == 0 {
+  if next_steps.is_empty() {
     return;
   }
   traverse(rules, &mut next_steps, already_visited);
@@ -120,16 +120,17 @@ fn get_time(c: char) -> u8 {
 fn find_open_tasks(rules: &Vec<Rule>, done: &Vec<char>, in_work: &Vec<char>) -> BTreeSet<char> {
   let mut next_letters = BTreeSet::new();
 
-  let roots = find_root(rules);
+  let already_assigned = |c| done.contains(&c) || in_work.contains(&c);
 
+  let roots = find_root(rules);
   for r in roots {
-    if !done.contains(&r) && !in_work.contains(&r) {
+    if !already_assigned(r) {
       next_letters.insert(r);
     }
   }
 
   for r in rules {
-    if !done.contains(&r.1) && !in_work.contains(&r.1) {
+    if !already_assigned(r.1) {
       let mut all_dependencies_resolved = true;
       for s in rules {
         if r.1 == s.1 && !done.contains(&s.0) {
@@ -146,18 +147,12 @@ fn find_open_tasks(rules: &Vec<Rule>, done: &Vec<char>, in_work: &Vec<char>) -> 
 }
 
 fn all_workers_idle(workers: &Vec<Option<Slot>>) -> bool {
-  for w in workers {
-    if *w != None {
-      return false;
-    }
-  }
-
-  true
+  workers.iter().all(|w| *w == None)
 }
 
 fn fetch_new_task(rules: &Vec<Rule>, done: &Vec<char>, in_work: &mut Vec<char>) -> Option<Slot> {
   let open_tasks = find_open_tasks(rules, done, in_work);
-  if open_tasks.len() == 0 {
+  if open_tasks.is_empty() {
     return None;
   }
 
