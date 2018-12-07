@@ -14,7 +14,7 @@ mod utils;
 use utils::ParseError;
 
 fn run() -> Result<(), ParseError> {
-  day7::problem1()?;
+  day7::problem2()?;
 
   if false {
     println!("Past problems:");
@@ -35,6 +35,8 @@ fn run() -> Result<(), ParseError> {
 
     day6::problem1()?;
     day6::problem2()?;
+
+    day7::problem1()?;
   }
 
   Ok(())
