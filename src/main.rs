@@ -11,9 +11,7 @@ mod day6;
 mod day7;
 mod utils;
 
-use utils::ParseError;
-
-fn run() -> Result<(), ParseError> {
+fn run() -> Result<(), utils::ParseError> {
   day7::problem2()?;
 
   if false {

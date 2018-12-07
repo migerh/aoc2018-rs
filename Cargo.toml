@@ -3,8 +3,7 @@ name = "y2018"
 version = "0.1.0"
 authors = ["Michael Gerhaeuser <michael.gerhaeuser@gmail.com>"]
 
-# uncomment once 2018 is stable
-# edition = "2018"
+edition = "2018"
 
 [dependencies]
 regex = "1"
