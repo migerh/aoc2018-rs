@@ -145,15 +145,28 @@ fn find_open_tasks(rules: &Vec<Rule>, done: &Vec<char>, in_work: &Vec<char>) -> 
   next_letters
 }
 
-fn get_idle_workers(workers: &Vec<Option<Slot>>) -> Vec<usize> {
-  let mut result = vec![];
-  for i in 0..workers.len() {
-    if workers[i] == None {
-      result.push(i);
+fn all_workers_idle(workers: &Vec<Option<Slot>>) -> bool {
+  for w in workers {
+    if *w != None {
+      return false;
     }
   }
 
-  result
+  true
+}
+
+fn fetch_new_task(rules: &Vec<Rule>, done: &Vec<char>, in_work: &mut Vec<char>) -> Option<Slot> {
+  let open_tasks = find_open_tasks(rules, done, in_work);
+  if open_tasks.len() == 0 {
+    return None;
+  }
+
+  let next_letter = *(open_tasks.iter().next().unwrap());
+  let time = get_time(next_letter);
+
+  in_work.push(next_letter);
+
+  Some((next_letter, time))
 }
 
 pub fn problem2() -> Result<i32, ParseError> {
@@ -170,38 +183,26 @@ pub fn problem2() -> Result<i32, ParseError> {
   let mut done = vec![];
   let mut in_work = vec![];
 
-  while letters.len() > 0 || get_idle_workers(&workers).len() < 5 {
+  loop {
+    workers = workers.iter().map(|w| {
+      match w {
+        Some((old_task, 1)) => {
+          done.push(*old_task);
+          fetch_new_task(&rules, &done, &mut in_work)
+        },
+        None => fetch_new_task(&rules, &done, &mut in_work),
+        Some((task, ticks_remaining)) => Some((*task, ticks_remaining - 1))
+      }
+    }).collect();
+
+    if all_workers_idle(&workers) {
+      break;
+    }
+
     tick += 1;
-
-    for i in 0..workers.len() {
-      let w = workers[i];
-      if w != None {
-        let v = w.unwrap();
-        if v.1 == 1 {
-          workers[i] = None;
-          done.push(v.0);
-        } else {
-          workers[i] = Some((v.0, v.1 - 1));
-        }
-      }
-    }
-
-    for i in get_idle_workers(&workers) {
-      letters = find_open_tasks(&rules, &done, &in_work);
-      if letters.len() == 0 {
-        break;
-      }
-
-      let next_letter = *(letters.iter().next().unwrap());
-      let time = get_time(next_letter);
-
-      in_work.push(next_letter);
-      workers[i] = Some((next_letter, time));
-    }
   }
 
   println!("Parallel work with 5 elves took {} ticks", tick);
-
 
   Ok(tick)
 }
