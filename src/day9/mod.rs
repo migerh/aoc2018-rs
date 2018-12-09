@@ -1,12 +1,12 @@
 use std::collections::VecDeque;
 use super::utils::Error;
 
-trait Rotation<T> {
+trait Rotation {
   fn rotate_forward(self: &mut Self, number: usize) -> Result<(), Error>;
   fn rotate_backward(self: &mut Self, number: usize) -> Result<(), Error>;
 }
 
-impl<T> Rotation<T> for VecDeque<T> {
+impl<T> Rotation for VecDeque<T> {
   fn rotate_forward(self: &mut VecDeque<T>, number: usize) -> Result<(), Error> {
     for _i in 0..number {
       let front = match self.pop_front() {
