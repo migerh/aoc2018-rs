@@ -1,5 +1,4 @@
 use std::num::ParseIntError;
-use std::error::Error;
 use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
@@ -23,6 +22,25 @@ pub fn preprocess_input(input: &str) -> Vec<&str> {
 }
 
 #[derive(Debug)]
+pub struct Error {
+  pub what: String
+}
+
+impl Error {
+  pub fn new(s: &str) -> Error {
+    let what = s.to_string();
+    Error { what }
+  }
+}
+
+impl fmt::Display for Error {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    write!(f, "{}", self.what)
+  }
+}
+
+
+#[derive(Debug)]
 pub struct ParseError {
   pub what: String
 }
@@ -40,12 +58,12 @@ impl fmt::Display for ParseError {
   }
 }
 
-impl Error for ParseError {
+impl std::error::Error for ParseError {
   fn description(&self) -> &str {
     "Error while parsing input"
   }
 
-  fn cause(&self) -> Option<&Error> {
+  fn cause(&self) -> Option<&std::error::Error> {
     None
   }
 }
@@ -53,5 +71,11 @@ impl Error for ParseError {
 impl From<ParseIntError> for ParseError {
   fn from(_error: ParseIntError) -> Self {
     ParseError::new("Unable to parse integer")
+  }
+}
+
+impl From<ParseError> for Error {
+  fn from(_error: ParseError) -> Self {
+    Error::new("Unable to parse something")
   }
 }
