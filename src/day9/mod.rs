@@ -4,14 +4,12 @@ fn play(number_of_players: u32, last_marble: u32) -> u32 {
   let mut circle = VecDeque::with_capacity((2 * last_marble) as usize);
   circle.push_back(0);
   let mut player = 0;
-  let mut marble = 0;
   let mut index = 0;
   let mut len = 1;
   let mut scores = vec![0; number_of_players as usize];
 
-  loop {
+  for marble in 1..(last_marble+1) {
     player = (player % number_of_players) + 1;
-    marble += 1;
 
     if marble % 100000 == 0 {
       println!("Looking at marble {}", marble);
@@ -31,12 +29,9 @@ fn play(number_of_players: u32, last_marble: u32) -> u32 {
     }
 
     index = (index + 2) % len;
+
     circle.insert(index as usize, marble);
     len += 1;
-
-    if marble >= last_marble {
-      break;
-    }
   }
 
   scores.iter().cloned().fold(0, u32::max)
