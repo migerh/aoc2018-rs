@@ -14,8 +14,7 @@ mod day9;
 mod utils;
 
 fn run() -> Result<(), utils::ParseError> {
-  // don't run anything. day 9 takes too long in debug
-  //day9::problem2();
+  day9::problem1();
 
   if false {
     println!("Past problems:");

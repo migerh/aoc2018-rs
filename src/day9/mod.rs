@@ -19,23 +19,19 @@ fn play(number_of_players: u32, last_marble: u32) -> u32 {
 
     if marble % 23 == 0 {
       index = (index + len - 7) % len;
-      let mut split = circle.split_off(index as usize);
-      let score = match split.pop_front() {
+      let score = match circle.remove(index as usize) {
         Some(v) => v,
         None => panic!("Something went wrong")
       };
       scores[(player - 1) as usize] += score + marble;
 
-      circle.append(&mut split);
       len -= 1;
 
       continue;
     }
 
     index = (index + 2) % len;
-    let mut split = circle.split_off(index as usize);
-    circle.push_back(marble);
-    circle.append(&mut split);
+    circle.insert(index as usize, marble);
     len += 1;
 
     if marble >= last_marble {
