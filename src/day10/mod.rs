@@ -1,6 +1,6 @@
 use std::str::FromStr;
 use regex::Regex;
-use super::utils::{preprocess_input, ParseError};
+use super::utils::{preprocess_input, ParseError, Error};
 
 #[derive(Debug)]
 struct Light {
@@ -94,7 +94,7 @@ fn bounding_box_size(lights: &Vec<Light>) -> (i32, i32) {
   (max.0 - min.0, max.1 - min.1)
 }
 
-pub fn problem1() -> Result<(), ParseError> {
+pub fn problem1() -> Result<i32, Error> {
   let mut lights = preprocess_input(include_str!("./data/input.txt"))
     .iter()
     .cloned()
@@ -102,7 +102,8 @@ pub fn problem1() -> Result<(), ParseError> {
     .collect::<Result<Vec<Light>, ParseError>>()?;
 
   let mut previous_bb_size = (1000000, 1000000);
-  for _i in 0..100000 {
+  let mut number_of_seconds = 0;
+  for i in 0..100000 {
     forward(&mut lights);
     let bb_size = bounding_box_size(&lights);
 
@@ -111,10 +112,28 @@ pub fn problem1() -> Result<(), ParseError> {
 
       let bb = bounding_box(&lights);
       print_lights(&lights, previous_bb_size, bb.0);
+      number_of_seconds = i;
       break;
     }
     previous_bb_size = bb_size;
   }
 
-  Ok(())
+  Ok(number_of_seconds)
+}
+
+pub fn problem2() -> Result<i32, Error> {
+  let wait = problem1()?;
+  println!("Wait: {} seconds", wait);
+
+  Ok(wait)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn check_problem2() {
+    assert_eq!(problem2().unwrap(), 10880);
+  }
 }
