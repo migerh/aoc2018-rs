@@ -1,4 +1,4 @@
-fn cell_power_level(cell: (u16, u16), serial: i32) -> i32 {
+fn cell_power_level(cell: (usize, usize), serial: i32) -> i32 {
   let (x, y) = cell;
   let rack_id = (x + 10) as i32;
 
@@ -14,12 +14,12 @@ fn cell_power_level(cell: (u16, u16), serial: i32) -> i32 {
   powerlevel - 5
 }
 
-fn power_level_square(grid: &Vec<Vec<i32>>, top_left: (u16, u16), size: u16) -> i32 {
+fn power_level_square(grid: &Vec<Vec<i32>>, top_left: (usize, usize), size: usize) -> i32 {
   let mut powerlevel = 0;
   let (tx, ty) = top_left;
   for x in 0..size {
     for y in 0..size {
-      powerlevel += grid[(tx + x - 1) as usize][(ty + y - 1) as usize];
+      powerlevel += grid[tx + x - 1][ty + y - 1];
     }
   }
 
@@ -39,7 +39,7 @@ fn powerlevel_grid(serial: i32) -> Vec<Vec<i32>> {
   result
 }
 
-pub fn problem1() -> ((u16, u16), i32) {
+pub fn problem1() -> ((usize, usize), i32) {
   let mut max_tl = (1, 1);
   let mut max_pl = 0;
   let size = 3;
@@ -62,28 +62,55 @@ pub fn problem1() -> ((u16, u16), i32) {
   (max_tl, max_pl)
 }
 
-pub fn problem2() -> ((u16, u16), u16, i32) {
+fn get_column(grid: &Vec<Vec<i32>>, top_left: (usize, usize), size: usize) -> i32 {
+  let (tx, ty) = top_left;
+
+  let mut sum = 0;
+  for y in ty..(ty + size) {
+    sum += grid[tx + size - 1][y];
+  }
+
+  sum
+}
+
+fn get_row(grid: &Vec<Vec<i32>>, top_left: (usize, usize), size: usize) -> i32 {
+  let (tx, ty) = top_left;
+
+  let mut sum = 0;
+  for x in tx..(tx + size) {
+    sum += grid[x][ty + size - 1];
+  }
+
+  sum
+}
+
+pub fn problem2() -> ((usize, usize), usize, i32) {
   let mut max_tl = (1, 1);
   let mut max_pl = 0;
   let mut max_size = 1;
 
-  let levels_grid = powerlevel_grid(5177);
+  let grid = powerlevel_grid(5177);
+  let mut levels_grid = powerlevel_grid(5177);
 
-  for size in 1..300 {
+  for size in 2..301 {
     println!("size: {}", size);
-    let end = 300 + 1 - size;
-    for x in 1..end {
-      for y in 1..end {
-        let powerlevel = power_level_square(&levels_grid, (x, y), size);
+    let end = 300 - size;
+    for x in 0..end {
+      for y in 0..end {
+        let col = get_column(&grid, (x, y), size);
+        let row = get_row(&grid, (x, y), size);
+        let corner = grid[x + size - 1][y + size - 1];
+        levels_grid[x][y] += col + row - corner;
+        let powerlevel = levels_grid[x][y];
+
         if max_pl < powerlevel {
-          max_tl = (x, y);
+          max_tl = (x + 1, y + 1);
           max_pl = powerlevel;
           max_size = size;
         }
       }
     }
   }
-
 
   println!("Max powerlevel of {} at {:?} with size {}", max_pl, max_tl, max_size);
 
@@ -112,5 +139,17 @@ mod tests {
   #[test]
   fn cell_power_level_4() {
     assert_eq!(cell_power_level((101, 153), 71), 4);
+  }
+
+  #[test]
+  fn check_problem1() {
+    assert_eq!(problem1(), ((235, 22), 30));
+  }
+
+  // don't run this in debug mode, it takes too long (~2.5min)
+  #[cfg(not(debug_assertions))]
+  #[test]
+  fn check_problem2() {
+    assert_eq!(problem2(), ((231, 135), 8, 80));
   }
 }
