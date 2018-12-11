@@ -14,7 +14,7 @@ fn cell_power_level(cell: (u16, u16), serial: i32) -> i32 {
   powerlevel - 5
 }
 
-fn power_level_square(grid: &Vec<Vec<i32>>, top_left: (u16, u16), size: u16, serial: i32) -> i32 {
+fn power_level_square(grid: &Vec<Vec<i32>>, top_left: (u16, u16), size: u16) -> i32 {
   let mut powerlevel = 0;
   let (tx, ty) = top_left;
   for x in 0..size {
@@ -39,7 +39,30 @@ fn powerlevel_grid(serial: i32) -> Vec<Vec<i32>> {
   result
 }
 
-pub fn problems() -> ((u16, u16), i32) {
+pub fn problem1() -> ((u16, u16), i32) {
+  let mut max_tl = (1, 1);
+  let mut max_pl = 0;
+  let size = 3;
+
+  let levels_grid = powerlevel_grid(5177);
+
+  for x in 1..299 {
+    for y in 1..299 {
+      let powerlevel = power_level_square(&levels_grid, (x, y), size);
+      if max_pl < powerlevel {
+        max_tl = (x, y);
+        max_pl = powerlevel;
+      }
+    }
+  }
+
+
+  println!("Max powerlevel of {} at {:?}", max_pl, max_tl);
+
+  (max_tl, max_pl)
+}
+
+pub fn problem2() -> ((u16, u16), u16, i32) {
   let mut max_tl = (1, 1);
   let mut max_pl = 0;
   let mut max_size = 1;
@@ -51,7 +74,7 @@ pub fn problems() -> ((u16, u16), i32) {
     let end = 300 + 1 - size;
     for x in 1..end {
       for y in 1..end {
-        let powerlevel = power_level_square(&levels_grid, (x, y), size, 5177);
+        let powerlevel = power_level_square(&levels_grid, (x, y), size);
         if max_pl < powerlevel {
           max_tl = (x, y);
           max_pl = powerlevel;
@@ -64,7 +87,7 @@ pub fn problems() -> ((u16, u16), i32) {
 
   println!("Max powerlevel of {} at {:?} with size {}", max_pl, max_tl, max_size);
 
-  (max_tl, max_pl)
+  (max_tl, max_size, max_pl)
 }
 
 #[cfg(test)]
