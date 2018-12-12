@@ -84,29 +84,14 @@ pub fn problem2() -> usize {
 fn get_rules() -> BTreeMap<&'static str, char> {
   let mut map = BTreeMap::new();
 
-  // #..#. => .
-  map.insert("#..#.", '.');
-
   // ##... => #
   map.insert("##...", '#');
-
-  // #.... => .
-  map.insert("#....", '.');
 
   // #...# => #
   map.insert("#...#", '#');
 
-  // ...#. => .
-  map.insert("...#.", '.');
-
   // .#..# => #
   map.insert(".#..#", '#');
-
-  // #.#.# => .
-  map.insert("#.#.#", '.');
-
-  // ..... => .
-  map.insert(".....", '.');
 
   // ##.## => #
   map.insert("##.##", '#');
@@ -117,9 +102,6 @@ fn get_rules() -> BTreeMap<&'static str, char> {
   // ###.. => #
   map.insert("###..", '#');
 
-  // #.##. => .
-  map.insert("#.##.", '.');
-
   // #.#.. => #
   map.insert("#.#..", '#');
 
@@ -129,17 +111,8 @@ fn get_rules() -> BTreeMap<&'static str, char> {
   // ..#.# => #
   map.insert("..#.#", '#');
 
-  // ..#.. => .
-  map.insert("..#..", '.');
-
-  // .##.. => .
-  map.insert(".##..", '.');
-
   // ...## => #
   map.insert("...##", '#');
-
-  // ....# => .
-  map.insert("....#", '.');
 
   // #.### => #
   map.insert("#.###", '#');
@@ -156,26 +129,11 @@ fn get_rules() -> BTreeMap<&'static str, char> {
   // .#.#. => #
   map.insert(".#.#.", '#');
 
-  // .#### => .
-  map.insert(".####", '.');
-
   // ###.# => #
   map.insert("###.#", '#');
 
   // ##### => #
   map.insert("#####", '#');
-
-  // .#.## => .
-  map.insert(".#.##", '.');
-
-  // .##.# => .
-  map.insert(".##.#", '.');
-
-  // .###. => .
-  map.insert(".###.", '.');
-
-  // ..##. => .
-  map.insert("..##.", '.');
 
   // .#... => #
   map.insert(".#...", '#');
