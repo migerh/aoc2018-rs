@@ -91,6 +91,7 @@ fn find_collision(carts: &Vec<Cart>) -> Vec<usize> {
     if cart.broken {
       continue;
     }
+
     map
       .entry(cart.position)
       .and_modify(|v: &mut Vec<usize> | v.push(index))
@@ -100,10 +101,10 @@ fn find_collision(carts: &Vec<Cart>) -> Vec<usize> {
   let result = vec![];
   for (_key, value) in map {
     if value.len() > 1 {
-      println!("Collided carts: {:?}", value);
-      for v in &value {
-        println!("Cart collided: {:?}", carts[*v].clone());
-      }
+      // println!("Collided carts: {:?}", value);
+      // for v in &value {
+      //   println!("Cart collided: {:?}", carts[*v].clone());
+      // }
       return value;
     }
   }
@@ -184,12 +185,10 @@ pub fn problem2() -> Result<(), Error> {
     println!("{:?}", c);
   }
 
-  for i in 0..4000 {
+  for i in 0..10000 {
     if i % 100 == 0 {
       println!("Iteration {}", i);
     }
-
-    let mut crashed = BTreeSet::new();
 
     for y in 0..150 {
       for x in 0..150 {
@@ -197,45 +196,32 @@ pub fn problem2() -> Result<(), Error> {
         for idx in 0..num_carts {
           let c = carts[idx].clone();
           let (cx, cy) = c.position;
-          if cx == x && cy == y {
+          if cx == x && cy == y && !c.broken {
             carts[idx] = drive(c, &tracks);
 
             let collided = find_collision(&carts);
             for q in collided {
-              crashed.insert(q);
+              println!("Mark cart {} as broken", q);
+              carts[q].broken = true;
             }
           }
         }
       }
     }
 
-    if crashed.len() > 0 {
-      println!("Before removal");
-      print_carts(&carts);
-    }
+    let unbroken_carts = carts
+      .iter()
+      .cloned()
+      .filter(|v| !v.broken)
+      .collect::<Vec<Cart>>();
 
-    let l = carts.len();
-    for r in 0..l {
-      let s = l - r - 1;
-      if crashed.contains(&s) {
-        println!("Removed cart {}, {:?}", s, carts[s]);
-        carts.remove(s);
-      }
-    }
-
-    if crashed.len() > 0 {
-      println!("After removal");
-      println!("{} carts left", carts.len());
-      print_carts(&carts);
-    }
-
-    if carts.len() == 1 {
-      println!("Only one cart left");
-      print_carts(&carts);
+    if unbroken_carts.len() == 1 {
+      println!("Only one cart left!");
+      print_carts(&unbroken_carts);
       break;
     }
 
-    if carts.len() == 0 {
+    if unbroken_carts.len() == 0 {
       println!("No carts left!");
       break;
     }
