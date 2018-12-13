@@ -15,6 +15,7 @@ struct Cart {
   pub position: Position,
   pub direction: Position,
   pub next_turn: Turn,
+  pub broken: bool,
 }
 
 impl Cart {
@@ -26,11 +27,13 @@ impl Cart {
       '^' => (0, -1),
       _ => (0, 0),
     };
-    Cart { position: p, direction, next_turn: Turn::Left }
+    let broken = false;
+    Cart { position: p, direction, next_turn: Turn::Left, broken }
   }
 
   pub fn from_cart(position: Position, direction: Position, next_turn: Turn) -> Cart {
-    Cart { position, direction, next_turn }
+    let broken = false;
+    Cart { position, direction, next_turn, broken }
   }
 }
 
@@ -85,6 +88,9 @@ fn find_collision(carts: &Vec<Cart>) -> Vec<usize> {
   let mut map = BTreeMap::new();
 
   for (index, cart) in carts.iter().enumerate() {
+    if cart.broken {
+      continue;
+    }
     map
       .entry(cart.position)
       .and_modify(|v: &mut Vec<usize> | v.push(index))
@@ -94,6 +100,10 @@ fn find_collision(carts: &Vec<Cart>) -> Vec<usize> {
   let result = vec![];
   for (_key, value) in map {
     if value.len() > 1 {
+      println!("Collided carts: {:?}", value);
+      for v in &value {
+        println!("Cart collided: {:?}", carts[*v].clone());
+      }
       return value;
     }
   }
@@ -155,6 +165,11 @@ pub fn problem1() -> Result<(), Error> {
   Ok(())
 }
 
+fn print_carts(carts: &Vec<Cart>) {
+  for cart in carts {
+    println!("{:?}", cart);
+  }
+}
 
 pub fn problem2() -> Result<(), Error> {
   let input = include_str!("./data/input.txt");
@@ -174,9 +189,10 @@ pub fn problem2() -> Result<(), Error> {
       println!("Iteration {}", i);
     }
 
+    let mut crashed = BTreeSet::new();
+
     for y in 0..150 {
       for x in 0..150 {
-        let mut crashed = BTreeSet::new();
         let num_carts = carts.len();
         for idx in 0..num_carts {
           let c = carts[idx].clone();
@@ -190,20 +206,32 @@ pub fn problem2() -> Result<(), Error> {
             }
           }
         }
-
-        let l = carts.len();
-        for r in 0..l {
-          let s = l - r;
-          if crashed.contains(&s) {
-            println!("Removed cart {}", s);
-            carts.remove(s);
-          }
-        }
       }
     }
 
+    if crashed.len() > 0 {
+      println!("Before removal");
+      print_carts(&carts);
+    }
+
+    let l = carts.len();
+    for r in 0..l {
+      let s = l - r - 1;
+      if crashed.contains(&s) {
+        println!("Removed cart {}, {:?}", s, carts[s]);
+        carts.remove(s);
+      }
+    }
+
+    if crashed.len() > 0 {
+      println!("After removal");
+      println!("{} carts left", carts.len());
+      print_carts(&carts);
+    }
+
     if carts.len() == 1 {
-      println!("Only one cart left: {:?}", carts[0]);
+      println!("Only one cart left");
+      print_carts(&carts);
       break;
     }
 
