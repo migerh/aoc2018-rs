@@ -37,6 +37,15 @@ impl Cart {
   }
 }
 
+fn load_tracks() -> Vec<Vec<char>> {
+  let input = include_str!("./data/input.txt");
+
+  preprocess_input(input)
+    .iter()
+    .map(|v| v.chars().collect())
+    .collect()
+}
+
 fn new_pos(p: Position, d: Position) -> Position {
   (p.0 + d.0, p.1 + d.1)
 }
@@ -108,25 +117,10 @@ fn find_collision(carts: &Vec<Cart>) -> Vec<usize> {
 }
 
 pub fn problem1() -> Result<Position, Error> {
-  let input = include_str!("./data/input.txt");
-  let tracks: Vec<Vec<char>> = preprocess_input(input)
-    .iter()
-    .map(|v| v.chars().collect())
-    .collect();
-
+  let tracks = load_tracks();
   let mut carts = find_carts(&tracks);
-  let mut collision_occurred = false;
 
-  for c in &carts {
-    println!("{:?}", c);
-  }
-
-  let mut collision: Position = (0, 0);
   for i in 0..200 {
-    if i % 100 == 0 {
-      println!("Iteration {}", i);
-    }
-
     let carts_copy: Vec<Cart> = carts
       .iter()
       .map(|v| v.clone())
@@ -136,31 +130,23 @@ pub fn problem1() -> Result<Position, Error> {
       for x in 0..150 {
         for (idx, c) in carts_copy.iter().enumerate() {
           let (cx, cy) = c.position;
-          if cx == x && cy == y {
+          if cx == x && cy == y && c.tick < i {
             carts[idx] = drive(c.clone(), &tracks);
+            carts[idx].tick = i;
 
             let collided = find_collision(&carts);
             if collided.len() > 0 {
-              println!("Collision detected! {:?}", collided);
-              collision_occurred = true;
-              collision = carts[collided[0] as usize].position;
-              break;
+              let position = carts[collided[0] as usize].position;
+              println!("First collision detected at: {:?}", position);
+              return Ok(position)
             }
           }
         }
       }
-
-      if collision_occurred {
-        break;
-      }
-    }
-
-    if collision_occurred {
-      break;
     }
   }
 
-  Ok(collision)
+  Err(Error::new("No collision occurred"))
 }
 
 fn print_carts(carts: &Vec<Cart>) {
@@ -170,25 +156,11 @@ fn print_carts(carts: &Vec<Cart>) {
 }
 
 pub fn problem2() -> Result<Position, Error> {
-  let input = include_str!("./data/input.txt");
-  let tracks: Vec<Vec<char>> = preprocess_input(input)
-    .iter()
-    .map(|v| v.chars().collect())
-    .collect();
-
+  let tracks = load_tracks();
   let mut carts = find_carts(&tracks);
-
-  for c in &carts {
-    println!("{:?}", c);
-  }
-
   let mut last_cart: Position = (0, 0);
 
   for i in 0..15000 {
-    if i % 100 == 0 {
-      println!("Iteration {}", i);
-    }
-
     for y in 0..150 {
       for x in 0..150 {
         let num_carts = carts.len();
@@ -201,9 +173,6 @@ pub fn problem2() -> Result<Position, Error> {
 
             let collided = find_collision(&carts);
             for q in collided {
-              let n = carts[q].clone();
-              println!("Mark cart {} as broken: {:?}", q, n);
-              println!("deleting cart at {} {}", n.position.0, n.position.1);
               carts[q].broken = true;
             }
           }

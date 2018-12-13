@@ -18,6 +18,7 @@ mod day13;
 mod utils;
 
 fn run() -> Result<(), utils::Error> {
+  day13::problem1()?;
   day13::problem2()?;
 
   if false {
