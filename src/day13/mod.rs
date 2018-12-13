@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use super::utils::{preprocess_input, Error};
 
 type Position = (i32, i32);
@@ -16,6 +16,7 @@ struct Cart {
   pub direction: Position,
   pub next_turn: Turn,
   pub broken: bool,
+  pub tick: i32,
 }
 
 impl Cart {
@@ -28,12 +29,11 @@ impl Cart {
       _ => (0, 0),
     };
     let broken = false;
-    Cart { position: p, direction, next_turn: Turn::Left, broken }
+    Cart { position: p, direction, next_turn: Turn::Left, broken, tick: -1 }
   }
 
-  pub fn from_cart(position: Position, direction: Position, next_turn: Turn) -> Cart {
-    let broken = false;
-    Cart { position, direction, next_turn, broken }
+  pub fn from_cart(position: Position, direction: Position, next_turn: Turn, broken: bool, tick: i32) -> Cart {
+    Cart { position, direction, next_turn, broken, tick }
   }
 }
 
@@ -42,10 +42,10 @@ fn new_pos(p: Position, d: Position) -> Position {
 }
 
 fn drive(cart: Cart, tracks: &Vec<Vec<char>>) -> Cart {
-  let (x, y) = cart.position;
-  let current = tracks[y as usize][x as usize];
+  let pos = new_pos(cart.position, cart.direction);
 
-  let (direction, next_turn) = match (current, cart.direction, cart.next_turn) {
+  let next = tracks[pos.1 as usize][pos.0 as usize];
+  let (direction, next_turn) = match (next, cart.direction, cart.next_turn) {
     ('/', (0, 1), t) => ((-1, 0), t),
     ('/', (0, -1), t) => ((1, 0), t),
     ('/', (-1, 0), t) => ((0, 1), t),
@@ -66,8 +66,7 @@ fn drive(cart: Cart, tracks: &Vec<Vec<char>>) -> Cart {
     (_, d, t) => (d, t)
   };
 
-  let pos = new_pos(cart.position, direction);
-  Cart::from_cart(pos, direction, next_turn)
+  Cart::from_cart(pos, direction, next_turn, cart.broken, cart.tick)
 }
 
 fn find_carts(tracks: &Vec<Vec<char>>) -> Vec<Cart> {
@@ -101,10 +100,6 @@ fn find_collision(carts: &Vec<Cart>) -> Vec<usize> {
   let result = vec![];
   for (_key, value) in map {
     if value.len() > 1 {
-      // println!("Collided carts: {:?}", value);
-      // for v in &value {
-      //   println!("Cart collided: {:?}", carts[*v].clone());
-      // }
       return value;
     }
   }
@@ -112,7 +107,7 @@ fn find_collision(carts: &Vec<Cart>) -> Vec<usize> {
   result
 }
 
-pub fn problem1() -> Result<(), Error> {
+pub fn problem1() -> Result<Position, Error> {
   let input = include_str!("./data/input.txt");
   let tracks: Vec<Vec<char>> = preprocess_input(input)
     .iter()
@@ -126,6 +121,7 @@ pub fn problem1() -> Result<(), Error> {
     println!("{:?}", c);
   }
 
+  let mut collision: Position = (0, 0);
   for i in 0..200 {
     if i % 100 == 0 {
       println!("Iteration {}", i);
@@ -147,6 +143,7 @@ pub fn problem1() -> Result<(), Error> {
             if collided.len() > 0 {
               println!("Collision detected! {:?}", collided);
               collision_occurred = true;
+              collision = carts[collided[0] as usize].position;
               break;
             }
           }
@@ -163,7 +160,7 @@ pub fn problem1() -> Result<(), Error> {
     }
   }
 
-  Ok(())
+  Ok(collision)
 }
 
 fn print_carts(carts: &Vec<Cart>) {
@@ -172,7 +169,7 @@ fn print_carts(carts: &Vec<Cart>) {
   }
 }
 
-pub fn problem2() -> Result<(), Error> {
+pub fn problem2() -> Result<Position, Error> {
   let input = include_str!("./data/input.txt");
   let tracks: Vec<Vec<char>> = preprocess_input(input)
     .iter()
@@ -185,7 +182,9 @@ pub fn problem2() -> Result<(), Error> {
     println!("{:?}", c);
   }
 
-  for i in 0..10000 {
+  let mut last_cart: Position = (0, 0);
+
+  for i in 0..15000 {
     if i % 100 == 0 {
       println!("Iteration {}", i);
     }
@@ -196,12 +195,15 @@ pub fn problem2() -> Result<(), Error> {
         for idx in 0..num_carts {
           let c = carts[idx].clone();
           let (cx, cy) = c.position;
-          if cx == x && cy == y && !c.broken {
+          if cx == x && cy == y && !c.broken && c.tick < i {
             carts[idx] = drive(c, &tracks);
+            carts[idx].tick = i;
 
             let collided = find_collision(&carts);
             for q in collided {
-              println!("Mark cart {} as broken", q);
+              let n = carts[q].clone();
+              println!("Mark cart {} as broken: {:?}", q, n);
+              println!("deleting cart at {} {}", n.position.0, n.position.1);
               carts[q].broken = true;
             }
           }
@@ -218,6 +220,7 @@ pub fn problem2() -> Result<(), Error> {
     if unbroken_carts.len() == 1 {
       println!("Only one cart left!");
       print_carts(&unbroken_carts);
+      last_cart = unbroken_carts[0].position;
       break;
     }
 
@@ -227,5 +230,22 @@ pub fn problem2() -> Result<(), Error> {
     }
   }
 
-  Ok(())
+  Ok(last_cart)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[cfg(not(debug_assertions))]
+  #[test]
+  fn check_problem1() {
+    assert_eq!(problem1().unwrap(), (64, 57));
+  }
+
+  #[cfg(not(debug_assertions))]
+  #[test]
+  fn check_problem2() {
+    assert_eq!(problem2().unwrap(), (136, 8));
+  }
 }

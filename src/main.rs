@@ -57,6 +57,9 @@ fn run() -> Result<(), utils::Error> {
 
     day12::problem1();
     day12::problem2();
+
+    day13::problem1()?;
+    day13::problem2()?;
   }
 
   Ok(())
