@@ -1,4 +1,4 @@
-use super::utils::{Error, ParseError};
+use super::utils::{ParseError};
 use std::num::ParseIntError;
 use std::vec::Vec;
 
@@ -31,7 +31,7 @@ fn compare(v1: &[u8], v2: &[u8]) -> bool {
   true
 }
 
-pub fn problem1() -> Result<(), Error> {
+pub fn problems() -> Result<(usize, usize), ParseError> {
   let mut scores = initialize()?;
   let pattern: Vec<u8> = vec![2, 0, 9, 2, 3, 1];
 
@@ -71,8 +71,19 @@ pub fn problem1() -> Result<(), Error> {
     }
   }
 
-  println!("Solution for problem 1: {}", concat(&scores[209231..209241]));
+  let solution_1 = concat(&scores[209231..209241]).parse::<usize>()?;
+  println!("Solution for problem 1: {}", solution_1);
   println!("Solution for problem 2: {}", solution_2);
 
-  Ok(())
+  Ok((solution_1, solution_2))
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn check_results() {
+    assert_eq!(problems().unwrap(), (6126491027, 20191616));
+  }
 }
