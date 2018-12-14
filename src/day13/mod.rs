@@ -202,6 +202,7 @@ pub fn problem2() -> Result<Position, Error> {
   Ok(last_cart)
 }
 
+#[cfg(not(debug_assertions))]
 #[cfg(test)]
 mod tests {
   use super::*;
