@@ -118,11 +118,10 @@ pub fn problem1() -> Result<Vec<Vec<&'static str>>, Error> {
   println!("Total number of samples: {}", total_samples);
   println!("Of those, {} match three or more ops", number_of_samples_match_three_or_more);
 
-
   Ok(opcode_map)
 }
 
-pub fn problem2() -> Result<(), Error> {
+pub fn problem2() -> Result<i32, Error> {
   let mut opcode_map = problem1()?;
 
   let mut reduced = false;
@@ -161,7 +160,18 @@ pub fn problem2() -> Result<(), Error> {
   }
 
   println!("final state: {:?}", state);
-  println!("Result: {}", state.registers[0]);
+  let result = state.registers[0];
+  println!("Result: {}", result);
 
-  Ok(())
+  Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn check_problem2() {
+    assert_eq!(problem2().unwrap(), 674);
+  }
 }

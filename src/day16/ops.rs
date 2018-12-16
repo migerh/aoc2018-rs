@@ -1,4 +1,46 @@
+use std::collections::BTreeMap;
 use super::data::State;
+
+type OpRef = &'static dyn Fn(State, i32, i32, i32) -> Option<State>;
+
+pub fn op_map() -> BTreeMap<&'static str, &'static Fn(State, i32, i32, i32) -> Option<State>> {
+  let mut map = BTreeMap::new();
+
+  let f: OpRef = &addr;
+  map.insert("addr", f);
+  let f: OpRef = &addi;
+  map.insert("addi", f);
+  let f: OpRef = &mulr;
+  map.insert("mulr", f);
+  let f: OpRef = &muli;
+  map.insert("muli", f);
+  let f: OpRef = &banr;
+  map.insert("banr", f);
+  let f: OpRef = &bani;
+  map.insert("bani", f);
+  let f: OpRef = &borr;
+  map.insert("borr", f);
+  let f: OpRef = &bori;
+  map.insert("bori", f);
+  let f: OpRef = &setr;
+  map.insert("setr", f);
+  let f: OpRef = &seti;
+  map.insert("seti", f);
+  let f: OpRef = &gtir;
+  map.insert("gtir", f);
+  let f: OpRef = &gtri;
+  map.insert("gtri", f);
+  let f: OpRef = &gtrr;
+  map.insert("gtrr", f);
+  let f: OpRef = &eqir;
+  map.insert("eqir", f);
+  let f: OpRef = &eqri;
+  map.insert("eqri", f);
+  let f: OpRef = &eqrr;
+  map.insert("eqrr", f);
+
+  map
+}
 
 // addr (add register) stores into register C the result of adding register A and register B.
 pub fn addr(state: State, a: i32, b: i32, c: i32) -> Option<State> {
@@ -42,12 +84,12 @@ pub fn bori(state: State, a: i32, b: i32, c: i32) -> Option<State> {
 
 // setr (set register) copies the contents of register A into register C. (Input B is ignored.)
 pub fn setr(state: State, a: i32, b: i32, c: i32) -> Option<State> {
-  apply_rr(state, a, b, c, |x, y| x)
+  apply_rr(state, a, b, c, |x, _| x)
 }
 
 // seti (set immediate) stores value A into register C. (Input B is ignored.)
 pub fn seti(state: State, a: i32, b: i32, c: i32) -> Option<State> {
-  apply_ii(state, a, b, c, |x, y| x)
+  apply_ii(state, a, b, c, |x, _| x)
 }
 
 // gtir (greater-than immediate/register) sets register C to 1 if value A is greater than register B. Otherwise, register C is set to 0.
