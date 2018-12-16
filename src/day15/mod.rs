@@ -10,11 +10,6 @@ pub fn problem1() -> Result<(), Error> {
 
   cave.print_with_units();
 
-  println!("--");
-
-  // cave.print_with_units_burned_in();
-  // cave.units[0].move_unit(&cave);
-
   cave.move_units();
   cave.print_with_units();
 

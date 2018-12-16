@@ -9,14 +9,6 @@ pub enum Kind {
 
 pub type Position = (usize, usize);
 
-fn position_add(pos: Position, x: i32, y: i32) -> Position {
-  ((pos.0 as i32 + x) as usize, (pos.1 as i32 + y) as usize)
-}
-
-fn distance(a: Position, b: Position) -> usize {
-  (b.1 as i32 - a.1 as i32).abs() as usize + (b.0 as i32 - a.0 as i32).abs() as usize
-}
-
 fn log(s: String, out: bool) {
   if out {
     println!("{}", s);
@@ -48,7 +40,6 @@ impl Unit {
   fn reachable_positions_from(pos: Position, board: &Board) -> BTreeMap<Position, u32> {
     let mut result = BTreeMap::new();
     let mut last_count = 0;
-    // let search = vec![-1, 0, 1];
     let mut round = 1;
 
     result.insert(pos, 0);
@@ -69,26 +60,6 @@ impl Unit {
       }
       round += 1;
     }
-
-    // result.insert(self.position);
-    // while last_count != result.len() {
-    //   last_count = result.len();
-    //   let mut additional_positions = BTreeSet::new();
-    //   for pos in &result {
-    //     for dy in &search {
-    //       for dx in &search {
-    //         let check_pos = position_add(*pos, *dx, *dy);
-    //         if board.get(&check_pos) == Some(&Tile::Floor) {
-    //           additional_positions.insert(check_pos);
-    //         }
-    //       }
-    //     }
-    //   }
-
-    //   for pos in additional_positions {
-    //     result.insert(pos);
-    //   }
-    // }
 
     result
   }
@@ -205,25 +176,6 @@ impl Unit {
       None => return None
     };
 
-    // let mut target_distance_map = BTreeMap::new();
-    // let mut closest_distance = 128;
-    // for pos in target_positions {
-    //   let distance = reachable_positions[&pos];
-    //   target_distance_map
-    //     .entry(distance)
-    //     .and_modify(|v: &mut Vec<Position>| v.push(pos))
-    //     .or_insert(vec![pos]);
-    //   if distance < closest_distance {
-    //     closest_distance = distance;
-    //   }
-    // }
-    // println!("target position candidates: {:?}", target_distance_map);
-    // println!("closest positions: {:?}", target_distance_map.get(&closest_distance));
-    // let target = match target_distance_map.get(&closest_distance) {
-    //   Some(v) => Unit::first_position(v),
-    //   None => return
-    // };
-
     log(format!("Target position: {:?}", target), cave.debug);
 
     // find the position to actually move to
@@ -232,17 +184,6 @@ impl Unit {
     let (targets, minimum_distance) = Unit::find_closest_positions(&my_range, &reachable_positions_of_target);
     log(format!("Possible target positions: {:?}", targets), cave.debug);
     let move_to = Unit::first_position(&targets);
-    // let mut move_to = (0, 0);
-    // let mut minimum_distance = 1000;
-    // for candidate in my_range {
-    //   let move_is_possible = reachable_positions_of_target.contains_key(&candidate);
-    //   let distance_candidate_to_target = reachable_positions_of_target[&candidate];
-    //   let distance_is_smaller = distance_candidate_to_target < minimum_distance;
-    //   if move_is_possible && distance_is_smaller {
-    //     minimum_distance = distance_candidate_to_target;
-    //     move_to = candidate;
-    //   }
-    // }
 
     log(format!("Final destination is {:?} with a distance of {} to the target position of {:?}", move_to, minimum_distance, target), cave.debug);
     move_to
