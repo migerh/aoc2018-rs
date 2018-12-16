@@ -64,7 +64,19 @@ fn find_matching_ops(results: &BTreeMap<&'static str, Option<State>>, expected_s
   valid_ops
 }
 
-pub fn problem1() -> Result<(), Error> {
+fn intersect(a: &Vec<&'static str>, b: &Vec<&'static str>) -> Vec<&'static str> {
+  let mut intersection = vec![];
+
+  for entry in a {
+    if b.contains(entry) {
+      intersection.push(*entry);
+    }
+  }
+
+  intersection
+}
+
+pub fn problem1() -> Result<Vec<Vec<&'static str>>, Error> {
   let input = include_str!("./data/input.txt");
   let lines = preprocess_input(input);
 
@@ -74,9 +86,8 @@ pub fn problem1() -> Result<(), Error> {
 
   let mut line_iterator = lines.iter();
   let mut number_of_samples_match_three_or_more = 0;
-  let mut number_of_samples_that_match_one = 0;
   let mut total_samples = 0;
-  let mut opcode_map = vec![""; 16];
+  let mut opcode_map = vec![State::all_ops(); 16];
   while let Some(line) = line_iterator.next() {
     if RE_before.is_match(line) {
       let before_state = parse_state(line)?;
@@ -95,29 +106,62 @@ pub fn problem1() -> Result<(), Error> {
       let results = before_state.apply_all_ops(instruction[1], instruction[2], instruction[3]);
       let matching_ops = find_matching_ops(&results, &expected_after_state);
 
+      opcode_map[instruction[0] as usize] = intersect(&opcode_map[instruction[0] as usize], &matching_ops);
+
       total_samples += 1;
       if matching_ops.len() >= 3 {
         number_of_samples_match_three_or_more += 1;
-      }
-
-      if matching_ops.len() == 1 {
-        number_of_samples_that_match_one += 1;
-        let opcode = instruction[0];
-        if opcode_map[opcode as usize] != "" && opcode_map[opcode as usize] != matching_ops[0] {
-          println!("{} maps to {}, but was previously mapped to {}", opcode, matching_ops[0], opcode_map[opcode as usize]);
-          Err(Error::new("Two samples map the same opcode to different instructions!"))?
-        } else {
-          opcode_map[opcode as usize] = matching_ops[0];
-        }
       }
     }
   }
 
   println!("Total number of samples: {}", total_samples);
   println!("Of those, {} match three or more ops", number_of_samples_match_three_or_more);
-  println!("Of those, {} match exactly one op", number_of_samples_that_match_one);
 
-  println!("Opcode map: {:?}", opcode_map);
+
+  Ok(opcode_map)
+}
+
+pub fn problem2() -> Result<(), Error> {
+  let mut opcode_map = problem1()?;
+
+  let mut reduced = false;
+  while !reduced {
+    let singles = opcode_map
+      .iter()
+      .enumerate()
+      .filter(|(_, value)| value.len() == 1)
+      .map(|(index, _)| index)
+      .collect::<Vec<usize>>();
+
+    for i in singles {
+      let instruction = opcode_map[i as usize][0];
+      for k in 0..opcode_map.len() {
+        if k != i {
+          opcode_map[k] = opcode_map[k].iter().cloned().filter(|v| v != &instruction).collect::<Vec<&str>>();
+        }
+      }
+    }
+    reduced = opcode_map.iter().map(|v| v.len()).sum::<usize>() <= 16;
+  }
+
+  let opcodes = opcode_map.iter().map(|v| v[0]).collect::<Vec<&str>>();
+
+  let input = include_str!("./data/program.txt");
+  let program = preprocess_input(input);
+
+  let mut state = State::new(0, 0, 0, 0);
+  for line in program {
+    let instruction = parse_instruction(line)?;
+    let op = opcodes[instruction[0] as usize];
+    state = match state.apply(op, instruction[1], instruction[2], instruction[3])? {
+      Some(s) => s,
+      None => Err(Error::new("Illegal instruction?"))?
+    };
+  }
+
+  println!("final state: {:?}", state);
+  println!("Result: {}", state.registers[0]);
 
   Ok(())
 }
