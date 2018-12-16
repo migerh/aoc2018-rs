@@ -4,19 +4,32 @@ use super::utils::Error;
 mod cave;
 mod unit;
 
-pub fn problem1() -> Result<(), Error> {
-  let input = include_str!("./data/example4.txt");
+pub fn problem1() -> Result<i32, Error> {
+  let input = include_str!("./data/input.txt");
   let mut cave = cave::Cave::from_str(input)?;
 
-  cave.print_with_units();
+  for i in 0..1000 {
+    if i % 10 == 0 {
+      println!("After {} rounds:", i);
+      cave.print_with_units();
+    }
 
-  for i in 0..48 {
-    println!("After {} round:", i + 1);
     cave.tick();
-    cave.print_with_units();
+
+    let number_of_goblins = cave.units.iter().filter(|v| v.kind == unit::Kind::Goblin).count();
+    let number_of_elfs = cave.units.iter().filter(|v| v.kind == unit::Kind::Elf).count();
+
+    if number_of_elfs == 0 || number_of_goblins == 0 {
+      let remaining_health: i32 = cave.units.iter().map(|v| v.health).sum();
+      let result = remaining_health * i;
+      println!("After the final round:");
+      cave.print_with_units();
+      println!("Finished! Result is {} * {} = {}", remaining_health, i, result);
+      return Ok(result);
+    }
   }
 
-  Ok(())
+  Ok(0)
 }
 
 #[cfg(test)]
