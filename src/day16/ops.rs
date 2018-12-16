@@ -4,40 +4,24 @@ use super::data::State;
 type OpRef = &'static dyn Fn(State, i32, i32, i32) -> Option<State>;
 
 pub fn op_map() -> BTreeMap<&'static str, &'static Fn(State, i32, i32, i32) -> Option<State>> {
-  let mut map = BTreeMap::new();
+  let mut map: BTreeMap<&'static str, OpRef> = BTreeMap::new();
 
-  let f: OpRef = &addr;
-  map.insert("addr", f);
-  let f: OpRef = &addi;
-  map.insert("addi", f);
-  let f: OpRef = &mulr;
-  map.insert("mulr", f);
-  let f: OpRef = &muli;
-  map.insert("muli", f);
-  let f: OpRef = &banr;
-  map.insert("banr", f);
-  let f: OpRef = &bani;
-  map.insert("bani", f);
-  let f: OpRef = &borr;
-  map.insert("borr", f);
-  let f: OpRef = &bori;
-  map.insert("bori", f);
-  let f: OpRef = &setr;
-  map.insert("setr", f);
-  let f: OpRef = &seti;
-  map.insert("seti", f);
-  let f: OpRef = &gtir;
-  map.insert("gtir", f);
-  let f: OpRef = &gtri;
-  map.insert("gtri", f);
-  let f: OpRef = &gtrr;
-  map.insert("gtrr", f);
-  let f: OpRef = &eqir;
-  map.insert("eqir", f);
-  let f: OpRef = &eqri;
-  map.insert("eqri", f);
-  let f: OpRef = &eqrr;
-  map.insert("eqrr", f);
+  map.insert("addr", &addr);
+  map.insert("addi", &addi);
+  map.insert("mulr", &mulr);
+  map.insert("muli", &muli);
+  map.insert("banr", &banr);
+  map.insert("bani", &bani);
+  map.insert("borr", &borr);
+  map.insert("bori", &bori);
+  map.insert("setr", &setr);
+  map.insert("seti", &seti);
+  map.insert("gtir", &gtir);
+  map.insert("gtri", &gtri);
+  map.insert("gtrr", &gtrr);
+  map.insert("eqir", &eqir);
+  map.insert("eqri", &eqri);
+  map.insert("eqrr", &eqrr);
 
   map
 }
