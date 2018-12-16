@@ -49,6 +49,21 @@ fn print_state(state: &Vec<Vec<char>>) {
   }
 }
 
+fn print_state_with_stats(state: &Vec<Vec<char>>, units: &Vec<Unit>) {
+  for (index, line) in state.iter().enumerate() {
+    let s = line.iter().collect::<String>();
+    print!("{}  ", s);
+    for unit in units.iter().filter(|v| v.position.1 == index) {
+      let code = match unit.kind {
+        Kind::Goblin => 'G',
+        Kind::Elf => 'E',
+      };
+      print!("{}@{} ({}) ", code, unit.position.0, unit.health);
+    }
+    println!("");
+  }
+}
+
 impl Cave {
   pub fn burn_units_in(&self, exclude: Position) -> Board {
     let mut board = self.board.clone();
@@ -81,10 +96,67 @@ impl Cave {
     }
   }
 
+  pub fn attack(&mut self) {
+    let (width, height) = self.dimension;
+    let mut updated = vec![false; self.units.len()];
+
+    for y in 0..height {
+      for x in 0..width {
+        for (index, unit) in self.units.clone().iter().enumerate() {
+          if unit.position == (x, y) && !updated[index] {
+            updated[index] = true;
+            let (target_index, damage) = match unit.attack(&self) {
+              Some(v) => v,
+              None => continue
+            };
+
+            self.units[target_index].health -= damage;
+            if self.units[target_index].health < 0 {
+              self.units.remove(target_index);
+            }
+
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  pub fn tick(&mut self) {
+    let (width, height) = self.dimension;
+    let mut updated = vec![false; self.units.len()];
+
+    for y in 0..height {
+      for x in 0..width {
+        for (index, unit) in self.units.clone().iter().enumerate() {
+          if unit.position == (x, y) && !updated[index] {
+            updated[index] = true;
+            self.units[index].position = match unit.move_unit(&self) {
+              Some(v) => v,
+              None => unit.position,
+            };
+
+            let (target_index, damage) = match unit.attack(&self) {
+              Some(v) => v,
+              None => continue
+            };
+
+            self.units[target_index].health -= damage;
+            if self.units[target_index].health < 0 {
+              self.units.remove(target_index);
+            }
+
+            break;
+          }
+        }
+      }
+    }
+  }
+
   pub fn print_with_units(&self) {
     let mut out = print_board(&self.board, self.dimension);
     print_units_onto_board(&mut out, &self.units);
-    print_state(&out);
+    print_state_with_stats(&out, &self.units);
   }
 
   pub fn print_with_units_burned_in(&self) {

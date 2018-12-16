@@ -1,4 +1,5 @@
 use std::collections::{BTreeSet, BTreeMap};
+use std::cmp::min;
 use super::cave::{Board, Cave, Tile};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
@@ -189,13 +190,55 @@ impl Unit {
     move_to
   }
 
-  pub fn attack(&self, all: &mut Vec<Unit>) {
-    let enemies = all
+  pub fn attack(&self, cave: &Cave) -> Option<(usize, i32)> {
+    // find enemies in range
+    let my_range = self.in_range(&cave.board);
+    let enemies_in_range: Vec<(usize, &Unit)> = cave.units
       .iter()
-      .filter(|v| v.kind != self.kind);
+      .enumerate()
+      .filter(|(_, v)| v.kind != self.kind)
+      .filter(|(_, v)| my_range.contains(&v.position))
+      .collect();
 
-    // for enemy in enemies {
+    if enemies_in_range.is_empty() {
+      return None;
+    }
 
-    // }
+    // find enemies with the lowest number of health
+    let mut lowest_health = std::i32::MAX;
+    let mut enemy_health_map = BTreeMap::new();
+    for entry in enemies_in_range {
+      let (_, enemy) = entry;
+      lowest_health = min(lowest_health, enemy.health);
+      enemy_health_map
+        .entry(enemy.health)
+        .and_modify(|v: &mut Vec<(usize, &Unit)>| v.push(entry))
+        .or_insert(vec![entry]);
+    }
+
+    if enemy_health_map.is_empty() {
+      return None;
+    }
+
+    // find the position of the enemy to attack
+    let attack_targets = &enemy_health_map[&lowest_health];
+    let positions: Vec<Position> = attack_targets.iter().map(|(_, v)| v.position).collect();
+    let position_to_attack = match Unit::first_position(&positions) {
+      Some(v) => v,
+      None => return None
+    };
+
+    // find the index of the enemy on that position
+    let target: Vec<(usize, &Unit)> = attack_targets.iter().cloned().filter(|(_, v)| v.position == position_to_attack).collect();
+
+    if target.len() > 1 {
+      panic!("Two units in the same spot?!?");
+    }
+
+    if target.is_empty() {
+      return None;
+    }
+
+    Some((target[0].0, self.attack))
   }
 }

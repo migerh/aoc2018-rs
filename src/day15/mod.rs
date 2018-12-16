@@ -5,19 +5,16 @@ mod cave;
 mod unit;
 
 pub fn problem1() -> Result<(), Error> {
-  let input = include_str!("./data/example3.txt");
+  let input = include_str!("./data/example4.txt");
   let mut cave = cave::Cave::from_str(input)?;
 
   cave.print_with_units();
 
-  cave.move_units();
-  cave.print_with_units();
-
-  cave.move_units();
-  cave.print_with_units();
-
-  cave.move_units();
-  cave.print_with_units();
+  for i in 0..48 {
+    println!("After {} round:", i + 1);
+    cave.tick();
+    cave.print_with_units();
+  }
 
   Ok(())
 }
