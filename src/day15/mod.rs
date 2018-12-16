@@ -32,6 +32,50 @@ pub fn problem1() -> Result<i32, Error> {
   Ok(0)
 }
 
+pub fn problem2() -> Result<i32, Error> {
+  let input = include_str!("./data/input.txt");
+  let mut number_of_surviving_elves = 0;
+  let mut remaining_health = 0;
+  let mut result = 0;
+  let mut rounds = 0;
+
+  for attack_power in 4..50 {
+    let mut cave = cave::Cave::from_str(input)?;
+    let mut number_of_elves = 0;
+
+    println!("Simulating with attack power {} for the elves", attack_power);
+    for (index, unit) in cave.units.clone().iter().enumerate() {
+      if unit.kind == unit::Kind::Elf {
+        number_of_elves += 1;
+        cave.units[index].attack = attack_power;
+      }
+    }
+
+    for i in 0..1000 {
+      cave.tick();
+
+      let number_of_goblins = cave.units.iter().filter(|v| v.kind == unit::Kind::Goblin).count();
+      number_of_surviving_elves = cave.units.iter().filter(|v| v.kind == unit::Kind::Elf).count();
+
+      if number_of_surviving_elves == 0 || number_of_goblins == 0 {
+        remaining_health = cave.units.iter().map(|v| v.health).sum();
+        result = remaining_health * i;
+        rounds = i;
+        break;
+      }
+    }
+
+    println!("Simulation finished! Result is {} * {} = {}", remaining_health, rounds, result);
+    println!("Number of elves died: {}", number_of_elves - number_of_surviving_elves);
+
+    if number_of_surviving_elves == number_of_elves {
+      return Ok(result);
+    }
+  }
+
+  Ok(0)
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
