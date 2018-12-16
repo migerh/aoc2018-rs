@@ -136,14 +136,15 @@ impl Cave {
               None => unit.position,
             };
 
-            let (target_index, damage) = match unit.attack(&self) {
+            let (target_index, damage) = match self.units[index].attack(&self) {
               Some(v) => v,
               None => continue
             };
 
             self.units[target_index].health -= damage;
-            if self.units[target_index].health < 0 {
+            if self.units[target_index].health <= 0 {
               self.units.remove(target_index);
+              updated.remove(target_index);
             }
 
             break;
