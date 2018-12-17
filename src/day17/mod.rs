@@ -23,10 +23,11 @@ impl Board {
   }
 }
 
-static debug: bool = false;
+static DEBUG: bool = false;
+static ROWS: i32 = 460;
 
 fn log(s: String) {
-  if debug {
+  if DEBUG {
     println!("{}", s);
   }
 }
@@ -100,9 +101,9 @@ fn initialize() -> Result<Board, Error> {
   let mut map = vec![vec!['.'; (size.0 + 1) as usize]; (size.1 + 1) as usize];
 
   for pos in positions {
-    // if pos.1 > 82 {
-    //   continue;
-    // }
+    if pos.1 > ROWS {
+      continue;
+    }
     let p = (pos.0 - offset.0, pos.1 - offset.1);
     map[p.1 as usize][p.0 as usize] = '#';
   }
@@ -124,7 +125,7 @@ fn print(board: &Board) {
     println!("");
   }
 
-  for (row, line) in board.map.iter()/*.take(85)*/.enumerate() {
+  for (row, line) in board.map.iter().take((ROWS+3) as usize).enumerate() {
     let s: String = line.iter().collect();
     print!("{:04}", row);
     println!("{}", s);
@@ -294,10 +295,13 @@ fn has_reachable_seed(p: Position, board: &Board, previous_seeds: &Vec<Position>
 
   for dx in 0..width {
     if x - dx <= offset.0 {
-      break;
+      return false;
     }
 
     let p1 = (x - dx, y);
+    if is_clay(board.get(p1)) {
+      return false;
+    }
     if previous_seeds.contains(&p1) {
       return true;
     }
@@ -305,12 +309,15 @@ fn has_reachable_seed(p: Position, board: &Board, previous_seeds: &Vec<Position>
       return true;
     }
 
-    if x + dx >= offset.0 + width {
-      break;
+    if x + dx >= offset.0 + width - 1 {
+      return false;
     }
 
     let p2 = (x + dx, y);
-    if current_seeds.contains(&p2) {
+    if is_clay(board.get(p2)) {
+      return false;
+    }
+    if previous_seeds.contains(&p2) {
       return true;
     }
     if current_seeds.contains(&p2) {
@@ -341,6 +348,7 @@ fn trace(seed: Position, mut board: &mut Board) {
     }
 
     if is_water(board.get((x, y))) && has_reachable_seed((x, y), &board, &previous_seeds, &seeds) {
+      println!("Have water and reachable seed");
       continue;
     }
 
