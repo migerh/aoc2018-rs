@@ -23,7 +23,7 @@ impl Board {
   }
 }
 
-static debug: bool = true;
+static debug: bool = false;
 
 fn log(s: String) {
   if debug {
@@ -83,7 +83,7 @@ fn bounding_box(positions: &Vec<Position>) -> (Position, Position) {
 }
 
 fn initialize() -> Result<Board, Error> {
-  let input = include_str!("./data/example.txt");
+  let input = include_str!("./data/input.txt");
   let mut positions = vec![];
 
   for line in input.split('\n') {
@@ -100,6 +100,9 @@ fn initialize() -> Result<Board, Error> {
   let mut map = vec![vec!['.'; (size.0 + 1) as usize]; (size.1 + 1) as usize];
 
   for pos in positions {
+    // if pos.1 > 82 {
+    //   continue;
+    // }
     let p = (pos.0 - offset.0, pos.1 - offset.1);
     map[p.1 as usize][p.0 as usize] = '#';
   }
@@ -121,7 +124,7 @@ fn print(board: &Board) {
     println!("");
   }
 
-  for (row, line) in board.map.iter().enumerate() {
+  for (row, line) in board.map.iter()/*.take(85)*/.enumerate() {
     let s: String = line.iter().collect();
     print!("{:04}", row);
     println!("{}", s);
@@ -132,17 +135,83 @@ fn is_sand(c: char) -> bool {
   c == '.'
 }
 
-fn find_next_stop_down(seed: Position, mut board: &mut Board) -> Position {
+fn is_falling_water(c: char) -> bool {
+  c == '|'
+}
+
+fn is_settled_water(c: char) -> bool {
+  c == '~'
+}
+
+fn is_water(c: char) -> bool {
+  is_falling_water(c) || is_settled_water(c)
+}
+
+fn is_sand_or_water(c: char) -> bool {
+  is_sand(c) || is_water(c)
+}
+
+fn is_sand_or_falling_water(c: char) -> bool {
+  is_sand(c) || is_falling_water(c)
+}
+
+fn is_clay(c: char) -> bool {
+  c == '#'
+}
+
+// An edge is something like this:
+// flowing left:    flowing right:
+//
+//  E~~~                 ~~~E
+//   #~~                 ~~#
+//
+// -> We have clay at (E.x - dir, E.y + 1),
+// water at (E.x - dir, E.y) and sand at
+// (E.x, E.y + 1)
+fn is_free_edge(dir: i32, p: Position, board: &Board) -> bool {
+  let (ex, ey) = p;
+  let clay = (ex - dir, ey + 1);
+  let water = (ex - dir, ey);
+  let sand = (ex, ey + 1);
+
+  let result = is_sand_or_water(board.get(p)) &&
+  is_water(board.get(water)) &&
+  is_sand(board.get(sand)) &&
+  is_clay(board.get(clay));
+
+  result
+}
+
+fn is_occupied_edge(dir: i32, p: Position, board: &Board) -> bool {
+  let (ex, ey) = p;
+  let clay = (ex - dir, ey + 1);
+  let water = (ex - dir, ey);
+  let also_water = (ex, ey + 1);
+
+  let result = is_sand_or_water(board.get(p)) &&
+  is_water(board.get(water)) &&
+  is_water(board.get(also_water)) &&
+  is_clay(board.get(clay));
+
+  result
+}
+
+
+fn find_next_stop_down(seed: Position, mut board: &mut Board) -> Option<Position> {
   let (x, mut y) = seed;
-  let max = board.map.len() as i32;
+  let maxh = board.map.len() as i32 - 1;
 
   y += 1;
-  while y < max && is_sand(board.get((x, y))) {
-    board.set((x, y), 'w');
+  while y < maxh && is_sand(board.get((x, y))) {
+    board.set((x, y), '|');
     y += 1;
   }
 
-  (x, y)
+  if y == maxh {
+    return None;
+  }
+
+  Some((x, y))
 }
 
 fn fill_bucket(seed: Position, board: &mut Board) -> Vec<Position> {
@@ -159,7 +228,7 @@ fn fill_bucket(seed: Position, board: &mut Board) -> Vec<Position> {
 
     log(format!("Flowing {} of {}", dx, width));
 
-    if x - dx < 0 {
+    if x - dx < board.offset.0 {
       flow_left = false;
     }
 
@@ -168,37 +237,49 @@ fn fill_bucket(seed: Position, board: &mut Board) -> Vec<Position> {
     }
 
     log(format!("Flow left, looking at {}, {}", x - dx, y));
-    if flow_left && is_sand(board.get((x - dx, y + 1))) {
+    // if flow_left && is_sand_or_water(board.get((x - dx, y + 1))) && is_sand(board.get((x - dx, y))) {
+    if flow_left && is_free_edge(-1, (x - dx, y), &board) {
       log(format!("Left: Sand below"));
       new_seeds.push((x - dx, y));
       flow_left = false;
     }
 
-    if flow_left && !is_sand(board.get((x - dx, y))) {
+    if flow_left && is_occupied_edge(-1, (x - dx, y), &board) {
+      log(format!("Left: Hit wall"));
+      flow_left = false;
+    }
+
+    if flow_left && is_clay(board.get((x - dx, y))) {
       log(format!("Left: Hit wall"));
       flow_left = false;
     }
 
     if flow_left {
       log(format!("Set {}, {}", x - dx, y));
-      board.set((x - dx, y), 'w');
+      board.set((x - dx, y), '~');
     }
 
     log(format!("Flow right, looking at {}, {}", x + dx, y));
-    if flow_right && is_sand(board.get((x + dx, y + 1))) {
+    // if flow_right && is_sand_or_falling_water(board.get((x + dx, y + 1))) && is_sand(board.get((x + dx, y))) {
+    if flow_right && is_free_edge(1, (x + dx, y), &board) {
       log(format!("Right: Sand below"));
       new_seeds.push((x + dx, y));
       flow_right = false;
     }
 
-    if flow_right && !is_sand(board.get((x + dx, y))) {
+    if flow_right && is_occupied_edge(1, (x + dx, y), &board) {
+      log(format!("Right: Sand below"));
+      flow_right = false;
+    }
+
+    if flow_right && is_clay(board.get((x + dx, y))) {
       log(format!("Right: Hit wall"));
       flow_right = false;
     }
 
     if flow_right {
       log(format!("Set {}, {}", x + dx, y));
-      board.set((x + dx, y), 'w');
+      board.set((x + dx, y), '~');
     }
   }
 
@@ -206,16 +287,60 @@ fn fill_bucket(seed: Position, board: &mut Board) -> Vec<Position> {
   new_seeds
 }
 
+fn has_reachable_seed(p: Position, board: &Board, previous_seeds: &Vec<Position>, current_seeds: &Vec<Position>) -> bool {
+  let width = board.map[0].len() as i32;
+  let offset = board.offset;
+  let (x, y) = p;
+
+  for dx in 0..width {
+    if x - dx <= offset.0 {
+      break;
+    }
+
+    let p1 = (x - dx, y);
+    if previous_seeds.contains(&p1) {
+      return true;
+    }
+    if current_seeds.contains(&p1) {
+      return true;
+    }
+
+    if x + dx >= offset.0 + width {
+      break;
+    }
+
+    let p2 = (x + dx, y);
+    if current_seeds.contains(&p2) {
+      return true;
+    }
+    if current_seeds.contains(&p2) {
+      return true;
+    }
+  }
+
+  false
+}
+
 fn trace(seed: Position, mut board: &mut Board) {
   let mut seeds = vec![seed];
-  let max_y = board.map.len() as i32;
+  let max_y = board.map.len() as i32 - 1;
+  let mut previous_seeds = vec![];
 
   while !seeds.is_empty() {
     let next = seeds.pop().unwrap();
-    board.set(next, 'w');
-    let (x, mut y) = find_next_stop_down(next, &mut board);
+    previous_seeds.push(next.clone());
+
+    board.set(next, '|');
+    let (x, mut y) = match find_next_stop_down(next, &mut board) {
+      Some(v) => v,
+      None => continue
+    };
 
     if y >= max_y {
+      continue;
+    }
+
+    if is_water(board.get((x, y))) && has_reachable_seed((x, y), &board, &previous_seeds, &seeds) {
       continue;
     }
 
@@ -223,13 +348,17 @@ fn trace(seed: Position, mut board: &mut Board) {
 
     y -= 1;
     let mut next_seeds = fill_bucket((x, y), &mut board);
-    while next_seeds.is_empty() {
+    while y > 0 && next_seeds.is_empty() {
       y -= 1;
       log(format!("Fill {}, {}", x, y));
       next_seeds = fill_bucket((x, y), &mut board);
     }
 
     seeds.append(&mut next_seeds);
+
+    if true {
+      print(&board);
+    }
   }
 }
 
@@ -241,7 +370,7 @@ fn count_water(board: &Board) -> i32 {
   let mut count = 0;
   for row in board.map.iter().skip(skip_rows as usize) {
     for chr in row.iter().skip(skip_cols as usize) {
-      if *chr == 'w' {
+      if is_water(*chr) {
         count += 1;
       }
     }
@@ -252,7 +381,7 @@ fn count_water(board: &Board) -> i32 {
 
 pub fn problem1() -> Result<(), Error> {
   let mut board = initialize()?;
-  print(&board);
+  // print(&board);
 
   println!("Tracing water…");
 
