@@ -373,20 +373,21 @@ fn trace(seed: Position, mut board: &mut Board) {
 fn count_water(board: &Board) -> i32 {
   let skip_rows = (board.bbox.0).1;
   let size = board.size;
-  // todo: calculate this instead of hard wiring it
-  // let (min_point, _) = board.bbox;
-  // let skip_cols = min_point.0 - board.offset.0;
 
   println!("Counting water. Skipping {} rows.", skip_rows);
-
   let mut count = 0;
+  let mut i = 0;
   for row in board.map.iter().skip(skip_rows as usize).take((size.1 + 1) as usize) {
+    i += 1;
     for chr in row.iter() {
       if is_water(*chr) {
         count += 1;
       }
     }
   }
+  println!("number of rows {} - adding skip_rows: {}", i, i + skip_rows);
+  println!("Board size: {:?}", size);
+
 
   count
 }
