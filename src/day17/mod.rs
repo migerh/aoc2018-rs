@@ -193,7 +193,7 @@ fn is_free_edge(dir: i32, p: Position, board: &Board) -> bool {
 
 fn find_next_stop_down(seed: Position, board: &mut Board) -> Option<Position> {
   let (x, mut y) = seed;
-  let maxh = board.map.len() as i32 - 1;
+  let maxh = board.map.len() as i32;
 
   y += 1;
   while y < maxh && board.can_flow((x, y)) {
@@ -220,8 +220,6 @@ fn fill_bucket(seed: Position, board: &mut Board) -> Vec<Position> {
     if !flow_left && !flow_right {
       break;
     }
-
-    //log(format!("Flowing {} of {}", dx, width));
 
     if x - dx < board.offset.0 {
       flow_left = false;
@@ -284,7 +282,7 @@ fn fill_bucket(seed: Position, board: &mut Board) -> Vec<Position> {
 
 fn settle_water(y: i32, board: &mut Board) -> bool {
   let start = board.offset.0;
-  let end = start + board.size.0;
+  let end = start + board.map[0].len() as i32;
   let mut result = false;
 
   // new strategy here:
@@ -304,6 +302,10 @@ fn settle_water(y: i32, board: &mut Board) -> bool {
       current = vec![];
       previous_was_flowing = false;
     }
+  }
+
+  if !current.is_empty() {
+    clusters.push(current);
   }
 
   for cluster in clusters {
@@ -342,7 +344,6 @@ fn settle_water(y: i32, board: &mut Board) -> bool {
 
 fn trace(seed: Position, mut board: &mut Board) {
   let mut seeds = vec![seed];
-  let max_y = board.map.len() as i32 - 1;
   let mut previous_seeds = vec![];
 
   while let Some(next) = seeds.pop() {
@@ -354,17 +355,10 @@ fn trace(seed: Position, mut board: &mut Board) {
       None => continue
     };
 
-    // if y > max_y {
-    //   continue;
-    // }
-
-    //log(format!("Stop down: {:?}", (x, y)));
-
     y -= 1;
     let mut next_seeds = fill_bucket((x, y), &mut board);
     while y > 0 && settle_water(y, &mut board) && next_seeds.is_empty() {
       y -= 1;
-      //log(format!("Fill {}, {}", x, y));
       next_seeds = fill_bucket((x, y), &mut board);
     }
 
@@ -380,11 +374,14 @@ fn count_water(board: &Board) -> i32 {
   let skip_rows = (board.bbox.0).1;
   let size = board.size;
   // todo: calculate this instead of hard wiring it
-  let skip_cols = 1;
+  // let (min_point, _) = board.bbox;
+  // let skip_cols = min_point.0 - board.offset.0;
+
+  println!("Counting water. Skipping {} rows.", skip_rows);
 
   let mut count = 0;
-  for row in board.map.iter().skip(skip_rows as usize).take(size.1 as usize) {
-    for chr in row.iter().skip(skip_cols as usize).take(size.0 as usize) {
+  for row in board.map.iter().skip(skip_rows as usize).take((size.1 + 1) as usize) {
+    for chr in row.iter() {
       if is_water(*chr) {
         count += 1;
       }
@@ -398,6 +395,7 @@ pub fn problem1() -> Result<(), Error> {
   let mut board = initialize()?;
   // print(&board);
 
+  println!("Board initialized: {:?}", board.bbox);
   println!("Tracing water…");
 
   trace((500, 0), &mut board);
