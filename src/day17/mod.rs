@@ -45,7 +45,7 @@ impl Board {
 }
 
 static DEBUG: bool = false;
-static ROWS: i32 = 500;
+static ROWS: i32 = 2000;
 
 fn log(s: String) {
   if DEBUG {
@@ -113,19 +113,21 @@ fn initialize() -> Result<Board, Error> {
   }
 
   let bbox = bounding_box(&positions);
-  // let (min_point, max_point) = bbox;
+  let (min_point, max_point) = bbox;
   // let offset = ((bbox.0).0 - 1, (bbox.0).1);
-  let offset = ((bbox.0).0 - 1, 0);
-  let size = ((bbox.1).0 - offset.0 + 1, (bbox.1).1 - offset.1);
+  let offset = (min_point.0 - 3, 0);
+  // let size = ((bbox.1).0 - offset.0 + 1, (bbox.1).1 - offset.1);
+  let size = (max_point.0 - min_point.0, max_point.1 - min_point.1);
 
-  log(format!("The map goes from {:?} to {:?}, size is {:?}", bbox.0, bbox.1, size));
+  //log(format!("The map goes from {:?} to {:?}, size is {:?}", bbox.0, bbox.1, size));
 
-  let mut map = vec![vec!['.'; (size.0 + 1) as usize]; (size.1 + 3) as usize];
+  let mut map = vec![vec!['.'; (size.0 + 6) as usize]; (size.1 + 15) as usize];
 
   for pos in positions {
     if pos.1 > ROWS {
       continue;
     }
+
     let p = (pos.0 - offset.0, pos.1 - offset.1);
     map[p.1 as usize][p.0 as usize] = '#';
   }
@@ -219,7 +221,7 @@ fn fill_bucket(seed: Position, board: &mut Board) -> Vec<Position> {
       break;
     }
 
-    log(format!("Flowing {} of {}", dx, width));
+    //log(format!("Flowing {} of {}", dx, width));
 
     if x - dx < board.offset.0 {
       flow_left = false;
@@ -229,10 +231,10 @@ fn fill_bucket(seed: Position, board: &mut Board) -> Vec<Position> {
       flow_right = false;
     }
 
-    log(format!("Flow left, looking at {}, {}", x - dx, y));
+    //log(format!("Flow left, looking at {}, {}", x - dx, y));
     // if flow_left && is_sand_or_water(board.get((x - dx, y + 1))) && is_sand(board.get((x - dx, y))) {
     if flow_left && is_free_edge(-1, (x - dx, y), &board) {
-      log(format!("Left: Sand below"));
+      //log(format!("Left: Sand below"));
       new_seeds.push((x - dx, y));
       flow_left = false;
     }
@@ -243,19 +245,19 @@ fn fill_bucket(seed: Position, board: &mut Board) -> Vec<Position> {
     // }
 
     if flow_left && board.is_clay((x - dx, y)) {
-      log(format!("Left: Hit wall"));
+      //log(format!("Left: Hit wall"));
       flow_left = false;
     }
 
     if flow_left {
-      log(format!("Set {}, {}", x - dx, y));
+      //log(format!("Set {}, {}", x - dx, y));
       board.set((x - dx, y), fill);
     }
 
-    log(format!("Flow right, looking at {}, {}", x + dx, y));
+    //log(format!("Flow right, looking at {}, {}", x + dx, y));
     // if flow_right && is_sand_or_falling_water(board.get((x + dx, y + 1))) && is_sand(board.get((x + dx, y))) {
     if flow_right && is_free_edge(1, (x + dx, y), &board) {
-      log(format!("Right: Sand below"));
+      //log(format!("Right: Sand below"));
       new_seeds.push((x + dx, y));
       flow_right = false;
     }
@@ -266,17 +268,17 @@ fn fill_bucket(seed: Position, board: &mut Board) -> Vec<Position> {
     // }
 
     if flow_right && board.is_clay((x + dx, y)) {
-      log(format!("Right: Hit wall"));
+      //log(format!("Right: Hit wall"));
       flow_right = false;
     }
 
     if flow_right {
-      log(format!("Set {}, {}", x + dx, y));
+      //log(format!("Set {}, {}", x + dx, y));
       board.set((x + dx, y), fill);
     }
   }
 
-  log(format!("New seeds: {:?}", new_seeds));
+  //log(format!("New seeds: {:?}", new_seeds));
   new_seeds
 }
 
@@ -284,8 +286,6 @@ fn settle_water(y: i32, board: &mut Board) -> bool {
   let start = board.offset.0;
   let end = start + board.size.0;
   let mut result = false;
-
-  println!("Settle row {}", y);
 
   // new strategy here:
   // to determine whether water can be settled, the flowing
@@ -354,23 +354,23 @@ fn trace(seed: Position, mut board: &mut Board) {
       None => continue
     };
 
-    if y >= max_y {
-      continue;
-    }
+    // if y > max_y {
+    //   continue;
+    // }
 
-    log(format!("Stop down: {:?}", (x, y)));
+    //log(format!("Stop down: {:?}", (x, y)));
 
     y -= 1;
     let mut next_seeds = fill_bucket((x, y), &mut board);
     while y > 0 && settle_water(y, &mut board) && next_seeds.is_empty() {
       y -= 1;
-      log(format!("Fill {}, {}", x, y));
+      //log(format!("Fill {}, {}", x, y));
       next_seeds = fill_bucket((x, y), &mut board);
     }
 
     seeds.append(&mut next_seeds);
 
-    if true {
+    if false {
       print(&board);
     }
   }
