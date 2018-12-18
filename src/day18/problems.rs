@@ -2,33 +2,51 @@ use std::str::FromStr;
 use super::board::Board;
 use super::super::utils::Error;
 
-fn run_simulation(minutes: usize) -> Result<usize, Error> {
+fn run_simulation(minutes: usize) -> Result<Vec<usize>, Error> {
   let input = include_str!("./data/input.txt");
   let mut board = Board::from_str(input)?;
 
   board.debug();
 
+  let mut checksums = vec![];
+
   for i in 0..minutes {
-    if i % 1_000_000 == 0 {
+    if i % 1_000 == 0 {
       println!("Round {}", i);
     }
+    checksums.push(board.checksum());
     board.tick();
-    // board.debug();
   }
   board.debug();
 
-  Ok(board.checksum())
+  Ok(checksums)
 }
 
 pub fn problem1() -> Result<usize, Error> {
-  let result = run_simulation(10)?;
-  println!("Result: {}", result);
+  let mut checksums = run_simulation(10)?;
+
+  let result = match checksums.pop() {
+    Some(v) => v,
+    None => Err(Error::new("No checksums found"))?
+  };
 
   Ok(result)
 }
 
 pub fn problem2() -> Result<usize, Error> {
-  let result = run_simulation(1_000_000_000)?;
+  // takes too long
+  // let result = run_simulation(1_000_000_000)?;
+
+  let simulated = 10_000;
+  let checksums = run_simulation(simulated)?;
+
+  let iterations = 1_000_000_000;
+  // specific to this input
+  let cycle = 28;
+
+  let offset = (iterations - 1_000) % cycle;
+  let result = checksums[1000 + offset];
+
   println!("Result: {}", result);
 
   Ok(result)
