@@ -31,25 +31,12 @@ impl Board {
     self.get(pos) == '#'
   }
 
-  pub fn is_settled_water(&self, pos: Position) -> bool {
-    self.get(pos) == '~'
-  }
-
   pub fn is_moving_water(&self, pos: Position) -> bool {
     self.get(pos) == '|'
   }
 
   pub fn can_flow(&self, pos: Position) -> bool {
     self.is_sand(pos) || self.is_moving_water(pos)
-  }
-}
-
-static DEBUG: bool = false;
-static ROWS: i32 = 2000;
-
-fn log(s: String) {
-  if DEBUG {
-    println!("{}", s);
   }
 }
 
@@ -114,20 +101,12 @@ fn initialize() -> Result<Board, Error> {
 
   let bbox = bounding_box(&positions);
   let (min_point, max_point) = bbox;
-  // let offset = ((bbox.0).0 - 1, (bbox.0).1);
   let offset = (min_point.0 - 3, 0);
-  // let size = ((bbox.1).0 - offset.0 + 1, (bbox.1).1 - offset.1);
   let size = (max_point.0 - min_point.0, max_point.1 - min_point.1);
-
-  //log(format!("The map goes from {:?} to {:?}, size is {:?}", bbox.0, bbox.1, size));
 
   let mut map = vec![vec!['.'; (size.0 + 6) as usize]; (size.1 + 15) as usize];
 
   for pos in positions {
-    if pos.1 > ROWS {
-      continue;
-    }
-
     let p = (pos.0 - offset.0, pos.1 - offset.1);
     map[p.1 as usize][p.0 as usize] = '#';
   }
@@ -149,7 +128,7 @@ fn print(board: &Board) {
     println!("");
   }
 
-  for (row, line) in board.map.iter().take((ROWS+3) as usize).enumerate() {
+  for (row, line) in board.map.iter().enumerate() {
     let s: String = line.iter().collect();
     print!("{:04}", row);
     println!("{}", s);
@@ -177,7 +156,7 @@ fn is_water(c: char) -> bool {
 // -> We have clay at (E.x - dir, E.y + 1),
 // water at (E.x - dir, E.y) and sand at
 // (E.x, E.y + 1)
-fn is_free_edge(dir: i32, p: Position, board: &Board) -> bool {
+fn is_edge(dir: i32, p: Position, board: &Board) -> bool {
   let (ex, ey) = p;
   let clay = (ex - dir, ey + 1);
   let water = (ex - dir, ey);
@@ -229,54 +208,33 @@ fn fill_bucket(seed: Position, board: &mut Board) -> Vec<Position> {
       flow_right = false;
     }
 
-    //log(format!("Flow left, looking at {}, {}", x - dx, y));
-    // if flow_left && is_sand_or_water(board.get((x - dx, y + 1))) && is_sand(board.get((x - dx, y))) {
-    if flow_left && is_free_edge(-1, (x - dx, y), &board) {
-      //log(format!("Left: Sand below"));
+    if flow_left && is_edge(-1, (x - dx, y), &board) {
       new_seeds.push((x - dx, y));
       flow_left = false;
     }
 
-    // if flow_left && is_occupied_edge(-1, (x - dx, y), &board) {
-    //   log(format!("Left: Hit wall"));
-    //   flow_left = false;
-    // }
-
     if flow_left && board.is_clay((x - dx, y)) {
-      //log(format!("Left: Hit wall"));
       flow_left = false;
     }
 
     if flow_left {
-      //log(format!("Set {}, {}", x - dx, y));
       board.set((x - dx, y), fill);
     }
 
-    //log(format!("Flow right, looking at {}, {}", x + dx, y));
-    // if flow_right && is_sand_or_falling_water(board.get((x + dx, y + 1))) && is_sand(board.get((x + dx, y))) {
-    if flow_right && is_free_edge(1, (x + dx, y), &board) {
-      //log(format!("Right: Sand below"));
+    if flow_right && is_edge(1, (x + dx, y), &board) {
       new_seeds.push((x + dx, y));
       flow_right = false;
     }
 
-    // if flow_right && is_occupied_edge(1, (x + dx, y), &board) {
-    //   log(format!("Right: Sand below"));
-    //   flow_right = false;
-    // }
-
     if flow_right && board.is_clay((x + dx, y)) {
-      //log(format!("Right: Hit wall"));
       flow_right = false;
     }
 
     if flow_right {
-      //log(format!("Set {}, {}", x + dx, y));
       board.set((x + dx, y), fill);
     }
   }
 
-  //log(format!("New seeds: {:?}", new_seeds));
   new_seeds
 }
 
@@ -370,40 +328,36 @@ fn trace(seed: Position, mut board: &mut Board) {
   }
 }
 
-fn count_water(board: &Board) -> i32 {
+fn count_water<F>(board: &Board, f: F) -> i32
+  where F: Fn(char) -> bool {
   let skip_rows = (board.bbox.0).1;
   let size = board.size;
 
-  println!("Counting water. Skipping {} rows.", skip_rows);
   let mut count = 0;
-  let mut i = 0;
   for row in board.map.iter().skip(skip_rows as usize).take((size.1 + 1) as usize) {
-    i += 1;
     for chr in row.iter() {
-      if is_water(*chr) {
+      if f(*chr) {
         count += 1;
       }
     }
   }
-  println!("number of rows {} - adding skip_rows: {}", i, i + skip_rows);
-  println!("Board size: {:?}", size);
-
 
   count
 }
 
-pub fn problem1() -> Result<(), Error> {
+pub fn problems() -> Result<(), Error> {
   let mut board = initialize()?;
-  // print(&board);
 
-  println!("Board initialized: {:?}", board.bbox);
   println!("Tracing water…");
 
   trace((500, 0), &mut board);
   print(&board);
 
-  let result = count_water(&board);
-  println!("Result: {}", result);
+  let result = count_water(&board, is_water);
+  println!("Result for problem 1: {}", result);
+
+  let result = count_water(&board, is_settled_water);
+  println!("Result for problem 2: {}", result);
 
   Ok(())
 }
