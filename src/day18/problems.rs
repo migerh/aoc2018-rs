@@ -33,6 +33,22 @@ pub fn problem1() -> Result<usize, Error> {
   Ok(result)
 }
 
+fn find_cycle(checksums: &Vec<usize>) -> Option<usize> {
+  if checksums.len() < 1000 {
+    return None;
+  }
+
+  let first = 800;
+  let find = checksums[first];
+  for (i, c) in checksums.iter().skip(first + 1).enumerate() {
+    if *c == find {
+      return Some(i + 1);
+    }
+  }
+
+  None
+}
+
 pub fn problem2() -> Result<usize, Error> {
   // takes too long
   // let result = run_simulation(1_000_000_000)?;
@@ -41,8 +57,7 @@ pub fn problem2() -> Result<usize, Error> {
   let checksums = run_simulation(simulated)?;
 
   let iterations = 1_000_000_000;
-  // specific to this input
-  let cycle = 28;
+  let cycle = find_cycle(&checksums).unwrap();
 
   let offset = (iterations - 1_000) % cycle;
   let result = checksums[1000 + offset];
