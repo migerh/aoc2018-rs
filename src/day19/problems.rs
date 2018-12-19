@@ -104,13 +104,8 @@ fn program() -> i32 {
   // r[1] = 998;
 
   // if r[0] == 1 {
-  //   // r[4] += 29;
-  //   // r[1] += 27*28*30*14*32;
-  //   // r[1] += 10160640;
-
-  //   // looks like I made a mistake while reverse engineering this program
-  //   // this is the correct value, taken from running the init code in the VM.
-  //   r[1] = 10551398;
+  //   // r[1] += (27*28 + 29)*30*14*32;
+  //   r[1] += 10550400;
   //   r[0] = 0;
   // }
 
