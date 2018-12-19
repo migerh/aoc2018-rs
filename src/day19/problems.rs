@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use super::data::*;
 use super::super::utils::{preprocess_input, ParseError, Error};
 use regex::{Captures, Regex};
@@ -75,159 +74,51 @@ pub fn problem1() -> Result<(), Error> {
   Ok(())
 }
 
-pub fn problem2() {
+pub fn problem2() -> Result<(), Error> {
+  let result = program();
+  println!("Result of reverse engineered program: {}", result);
+
+  Ok(())
+}
+
+fn program() -> i128 {
   let mut r: [i128; 6] = [0, 0, 0, 0, 0, 0];
-  // #ip 5
-  let ip: usize = 5;
 
-  // let result: i64;
-  // unsafe {
-  //     asm!(
-  //         "
+  r[1] += 2;
+  r[1] = r[1]*r[1]*19*11 + (r[3] + 7) * 22 + 8;
 
-  //        1:
-  //         jmp 1b
+  if r[0] == 1 {
+    r[4] += 29;
+    r[1] += 27*28*30*14*32;
+    r[0] = 0;
+  }
 
-  //        "
-  //         : "={r10}"(result)             // Output register
-  //         : ""                          // Input registers
-  //         : "r10,r11,r12,r13,r14,r15"   // Clobbered registers
-  //         : "intel", "volatile"         // Options (intel syntax, don't optimize out)
-  //     );
-  // }
-  // result
-
-  // 00 - addi 5 16 5
-  // !ip
-  r[5] += 16;
-
-  // 01 - seti 1 1 4
   r[4] = 1;
 
-  // 02 - seti 1 8 2
-  r[2] = 1;
+  loop {
+    r[2] = 1;
 
-  // 03 - mulr 4 2 3
-  r[3] = r[4] + r[2];
+    loop {
+      r[3] = r[4] * r[2];
 
-  // 04 - eqrr 3 1 3
-  r[3] = if r[3] == r[1] { 1 } else { 0 };
+      if r[3] == r[1] {
+        r[0] += r[4];
+      }
 
-  // 05 - addr 3 5 5
-  // !ip
-  r[5] = r[3] + r[5];
+      r[2] += 1;
 
-  // 06 - addi 5 1 5
-  r[5] += 1;
+      if r[2] > r[1] {
+        r[4] += 1;
+        break;
+      }
+    }
 
-  // 07 - addr 4 0 0
-  r[0] += r[4];
-
-  // 08 - addi 2 1 2
-  r[2] += 1;
-
-    // 09 - gtrr 2 1 3
-    r[3] = if r[2] > r[1] { 1 } else { 0 };
-
-    // 10 - addr 5 3 5
-    // !ip
-    r[5] += r[3];
-
-    // 11 - seti 2 6 5
-    // !ip
-    r[5] = 2;
-
-    // 12 - addi 4 1 4
-    r[4] += 1;
-
-  if r[2] > r[1] {
-    r[4] += 1;
-  } else {
-    // !ip
-    r[5] = 2;
+    if r[4] > r[1] {
+      break;
+    }
   }
 
-    // 13 - gtrr 4 1 3
-    r[3] = if r[4] > r[1] { 1 } else { 0 };
-
-    // 14 - addr 3 5 5
-    // !ip
-    r[5] += r[3];
-
-    // 15 - seti 1 4 5
-    // !ip
-    r[5] = 1;
-
-    // 16 - mulr 5 5 5
-    // !ip
-    r[5] *= r[5];
-
-  if r[4] > r[1] {
-    r[5] *= r[5];
-  } else {
-    r[5] = 1;
-  }
-
-  // 17 - addi 1 2 1
-  r[1] += 2;
-
-  // 18 - mulr 1 1 1
-  r[1] *= r[1];
-
-  // 19 - mulr 5 1 1
-  r[1] *= r[5];
-
-  // 20 - muli 1 11 1
-  r[1] *= 11;
-
-  // 21 - addi 3 7 3
-  r[3] += 7;
-
-  // 22 - mulr 3 5 3
-  r[3] *= r[5];
-
-  // 23 - addi 3 8 3
-  r[3] += 8;
-
-  // 24 - addr 1 3 1
-  r[1] += r[3];
-
-  // 25 - addr 5 0 5
-  // !ip
-  r[5] += r[0];
-
-  // 26 - seti 0 9 5
-  // !ip
-  r[5] = 0;
-
-  // 27 - setr 5 8 3
-  r[3] = r[5];
-
-  // 28 - mulr 3 5 3
-  r[3] *= r[5];
-
-  // 29 - addr 5 3 3
-  r[4] += r[5];
-
-  // 20 - mulr 5 3 3
-  r[3] *= r[5];
-
-  // 31 - muli 3 14 3
-  r[3] *= 14;
-
-  // 32 - mulr 3 5 3
-  r[3] *= r[5];
-
-  // 33 - addr 1 3 1
-  r[1] += r[3];
-
-  // 34 - seti 0 4 0
-  r[0] = 0;
-
-  // 35 - seti 0 3 5
-  // !ip
-  r[5] = 0;
-
+  r[0]
 }
 
 #[cfg(test)]
