@@ -31,7 +31,10 @@ pub fn shortest_path(node: Box<Node>, pos: &mut Position, map: &mut HashSet<Posi
 
   let mut lengths = vec![];
   for child in node.children {
+    let old_pos = pos.clone();
     lengths.push(shortest_path(child, pos, map, length));
+    pos.0 = old_pos.0;
+    pos.1 = old_pos.1;
   }
 
   let result = match lengths.iter().max() {

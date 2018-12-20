@@ -4,20 +4,29 @@ use super::parser::parse;
 use super::analysis::{Position, shortest_path};
 
 fn run_problem1(input: &str) -> Result<usize, Error> {
-  let mut nodes = parse(input);
+  let nodes = parse(input);
+
+  // println!("Nodes: {:?}", nodes);
+  // println!("Found {} root nodes", nodes.len());
+
   let mut map = HashSet::new();
   let mut pos: Position = (0, 0);
-  if let Some(root) = nodes.pop() {
+  let mut distance = 0;
+  for root in nodes {
+    // println!("Looking at node {:?}", root);
     let result = shortest_path(root, &mut pos, &mut map, 0);
-    println!("Result: {}", result);
-    Ok(result)
-  } else {
-    Err(Error::new("No root node found."))
+    // println!("Intermediate result: {}", result);
+    distance += result;
   }
+
+  println!("Result: {}", distance);
+  Ok(distance)
 }
 
 pub fn problem1() -> Result<usize, Error> {
-  let input = include_str!("./data/input.txt");
+  // let input = include_str!("./data/input.txt");
+  // let input = "^ENWWW(NEEE|SSE(EE|N))$";
+  let input = "^ENNWSWW(NEWS|)SSSEEN(WNSE|)EE(SWEN|)NNN$";
   run_problem1(input)
 }
 

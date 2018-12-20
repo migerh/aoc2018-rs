@@ -15,6 +15,8 @@ fn recursive_parse(mut s: &mut String) -> Vec<Box<Node>> {
         let b: &mut Node = node.borrow_mut();
         let mut children = recursive_parse(&mut s);
         b.children.append(&mut children);
+        nodes.push(node);
+        node = Box::new(Node::new());
       },
       ')' => {
         nodes.push(node);
