@@ -38,7 +38,7 @@ fn parse_instruction(s: &str) -> Result<(String, [i128; 3]), ParseError> {
   instruction_from_capture(&capture)
 }
 
-pub fn run(mut initial_state: State) -> Result<usize, Error> {
+pub fn run() -> Result<(i128, i128), Error> {
   let input = include_str!("./data/input.txt");
   let mut program = preprocess_input(input);
   let ip_designation = program.remove(0);
@@ -50,9 +50,9 @@ pub fn run(mut initial_state: State) -> Result<usize, Error> {
     .map(|v| parse_instruction(v))
     .collect::<Result<Vec<(String, [i128; 3])>, ParseError>>()?;
 
-  let mut state = initial_state;
-  let mut i = 0;
+  let mut state = State::new(ip, 0, 0, 0, 0, 0, 0);
   let mut cancelling_numbers = HashSet::new();
+  let mut first = None;
   let mut last = 0;
   loop {
     let ip = state.registers[state.ip as usize];
@@ -64,24 +64,25 @@ pub fn run(mut initial_state: State) -> Result<usize, Error> {
     let (op, p) = instruction;
     if state.registers[2] == 28 {
       let cancel = state.registers[4];
-      // println!("4: {}, cycles: {}", cancel, i);
       if !cancelling_numbers.insert(cancel) {
-        println!("Smallest number that runs the program the longest: {}", last);
         break;
       }
       last = cancel;
+      if first.is_none() {
+        first = Some(cancel);
+      }
     }
     state.apply(op.as_str(), p[0], p[1], p[2]);
-    i += 1;
   }
 
-  Ok(i)
+  Ok((first.unwrap(), last))
 }
 
-pub fn problem1() -> Result<usize, Error> {
-  let state = State::new(2, 0, 0, 0, 0, 0, 0);
-  let cycles = run(state)?;
-  println!("i = {}, cycles = {}", 12213578, cycles);
+pub fn problems() -> Result<(i128, i128), Error> {
+  let result = run()?;
 
-  Ok(0)
+  println!("Solution for Problem 1: {}", result.0);
+  println!("Solution for Problem 2: {}", result.1);
+
+  Ok(result)
 }

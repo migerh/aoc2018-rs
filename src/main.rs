@@ -26,7 +26,7 @@ mod day21;
 mod utils;
 
 fn run() -> Result<(), utils::Error> {
-  day20::problems::problem1()?;
+  day21::problems::problems()?;
 
   if false {
     println!("Past problems:");
@@ -84,6 +84,10 @@ fn run() -> Result<(), utils::Error> {
 
     day19::problems::problem1()?;
     day19::problems::problem2()?;
+
+    day20::problems::problems()?;
+
+    day21::problems::problems()?;
   }
 
   Ok(())

@@ -3,10 +3,8 @@ use super::super::utils::Error;
 use super::parser::parse;
 use super::analysis::{Position, count_rooms};
 
-fn run_problem1(input: &str) -> Result<usize, Error> {
+fn run(input: &str) -> Result<(usize, usize), Error> {
   let nodes = parse(input);
-
-  // println!("Nodes: {:?}", nodes);
 
   let mut map = HashMap::new();
   let mut pos: Position = (0, 0);
@@ -19,17 +17,16 @@ fn run_problem1(input: &str) -> Result<usize, Error> {
   println!("Distance: {}", distance);
   println!("Number of Rooms: {}", number_of_rooms);
 
-  Ok(distance)
+  Ok((distance, number_of_rooms))
 }
 
-pub fn problem1() -> Result<usize, Error> {
+pub fn problems() -> Result<(usize, usize), Error> {
   let input = include_str!("./data/input.txt");
   // let input = "^ENWWW(NEEE|SSE(EE|N))$";
   // let input = "^ENNWSWW(NEWS|)SSSEEN(WNSE|)EE(SWEN|)NNN$";
   // let input = "^WNE$";
 
-  // println!("Input: {}", input);
-  run_problem1(input)
+  run(input)
 }
 
 #[cfg(test)]
@@ -38,26 +35,26 @@ mod tests {
 
   #[test]
   fn check_example1() {
-    assert_eq!(run_problem1("^WNE$").unwrap(), 3);
+    assert_eq!(run("^WNE$").unwrap().0, 3);
   }
 
   #[test]
   fn check_example2() {
-    assert_eq!(run_problem1("^ENWWW(NEEE|SSE(EE|N))$").unwrap(), 10);
+    assert_eq!(run("^ENWWW(NEEE|SSE(EE|N))$").unwrap().0, 10);
   }
 
   #[test]
   fn check_example3() {
-    assert_eq!(run_problem1("^ENNWSWW(NEWS|)SSSEEN(WNSE|)EE(SWEN|)NNN$").unwrap(), 18);
+    assert_eq!(run("^ENNWSWW(NEWS|)SSSEEN(WNSE|)EE(SWEN|)NNN$").unwrap().0, 18);
   }
 
   #[test]
   fn check_example4() {
-    assert_eq!(run_problem1("^ESSWWN(E|NNENN(EESS(WNSE|)SSS|WWWSSSSE(SW|NNNE)))$").unwrap(), 23);
+    assert_eq!(run("^ESSWWN(E|NNENN(EESS(WNSE|)SSS|WWWSSSSE(SW|NNNE)))$").unwrap().0, 23);
   }
 
   #[test]
   fn check_example5() {
-    assert_eq!(run_problem1("^WSSEESWWWNW(S|NENNEEEENN(ESSSSW(NWSW|SSEN)|WSWWN(E|WWS(E|SS))))$").unwrap(), 31);
+    assert_eq!(run("^WSSEESWWWNW(S|NENNEEEENN(ESSSSW(NWSW|SSEN)|WSWWN(E|WWS(E|SS))))$").unwrap().0, 31);
   }
 }
