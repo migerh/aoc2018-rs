@@ -1,4 +1,3 @@
-use super::super::utils::Error;
 use super::ops::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

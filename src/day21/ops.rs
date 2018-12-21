@@ -1,30 +1,4 @@
-use std::collections::BTreeMap;
 use super::data::State;
-
-type OpRef = &'static dyn Fn(&mut State, i128, i128, i128) -> ();
-
-pub fn op_map() -> BTreeMap<&'static str, &'static Fn(&mut State, i128, i128, i128) -> ()> {
-  let mut map: BTreeMap<&'static str, OpRef> = BTreeMap::new();
-
-  map.insert("addr", &addr);
-  map.insert("addi", &addi);
-  map.insert("mulr", &mulr);
-  map.insert("muli", &muli);
-  map.insert("banr", &banr);
-  map.insert("bani", &bani);
-  map.insert("borr", &borr);
-  map.insert("bori", &bori);
-  map.insert("setr", &setr);
-  map.insert("seti", &seti);
-  map.insert("gtir", &gtir);
-  map.insert("gtri", &gtri);
-  map.insert("gtrr", &gtrr);
-  map.insert("eqir", &eqir);
-  map.insert("eqri", &eqri);
-  map.insert("eqrr", &eqrr);
-
-  map
-}
 
 // addr (add register) stores into register C the result of adding register A and register B.
 pub fn addr(state: &mut State, a: i128, b: i128, c: i128) {
