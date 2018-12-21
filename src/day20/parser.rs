@@ -1,43 +1,52 @@
-use std::borrow::BorrowMut;
-use super::node::Node;
+use super::node::{Directions};
 
 fn preprocess_input(s: &str) -> String {
   s.chars().rev().collect()
 }
 
-fn recursive_parse(mut s: &mut String) -> Vec<Box<Node>> {
-  let mut nodes = vec![];
-  let mut node: Box<Node> = Box::new(Node::new());
+fn recursive_parse(mut s: &mut String) -> Directions {
+  let mut buffer = String::new();
+  let mut directions = vec![];
+  let mut concats = vec![];
   while let Some(c) = s.pop() {
     match c {
       '$' | '^' => {},
       '(' => {
-        let b: &mut Node = node.borrow_mut();
-        let mut children = recursive_parse(&mut s);
-        b.children.append(&mut children);
-        nodes.push(node);
-        node = Box::new(Node::new());
+        if !buffer.is_empty() {
+          directions.push(Directions::Content(buffer));
+          buffer = String::new();
+        }
+        let options = recursive_parse(&mut s);
+        directions.push(options);
       },
       ')' => {
-        nodes.push(node);
-        return nodes;
+        if !buffer.is_empty() {
+          directions.push(Directions::Content(buffer));
+        }
+        concats.push(Directions::Concat(directions));
+        return Directions::Options(concats);
       },
       '|' => {
-        nodes.push(node);
-        node = Box::new(Node::new());
+        if !buffer.is_empty() {
+          directions.push(Directions::Content(buffer));
+          buffer = String::new();
+        }
+        concats.push(Directions::Concat(directions));
+        directions = vec![];
       },
       _ => {
-        let b: &mut Node = node.borrow_mut();
-        b.buffer.push(c);
+        buffer.push(c);
       }
     }
   }
 
-  nodes.push(node);
-  nodes
+  if buffer.len() > 0 {
+    directions.push(Directions::Content(buffer));
+  }
+  Directions::Concat(directions)
 }
 
-pub fn parse(s: &str) -> Vec<Box<Node>> {
+pub fn parse(s: &str) -> Directions {
   let mut input = preprocess_input(s);
   recursive_parse(&mut input)
 }

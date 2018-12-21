@@ -1,4 +1,11 @@
 #[derive(Debug)]
+pub enum Directions {
+  Content(String),
+  Options(Vec<Directions>),
+  Concat(Vec<Directions>),
+}
+
+#[derive(Debug)]
 pub struct Node {
   pub buffer: String,
   pub children: Vec<Box<Node>>,

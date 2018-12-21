@@ -1,32 +1,29 @@
 use std::collections::HashSet;
 use super::super::utils::Error;
 use super::parser::parse;
-use super::analysis::{Position, shortest_path};
+use super::analysis::{Position, count_rooms};
 
 fn run_problem1(input: &str) -> Result<usize, Error> {
   let nodes = parse(input);
 
-  // println!("Nodes: {:?}", nodes);
-  // println!("Found {} root nodes", nodes.len());
+  println!("Nodes: {:?}", nodes);
 
   let mut map = HashSet::new();
   let mut pos: Position = (0, 0);
-  let mut distance = 0;
-  for root in nodes {
-    // println!("Looking at node {:?}", root);
-    let result = shortest_path(root, &mut pos, &mut map, 0);
-    // println!("Intermediate result: {}", result);
-    distance += result;
-  }
+  let distance = count_rooms(&nodes, &mut pos, &mut map, 0);
 
-  println!("Result: {}", distance);
+  println!("Distance: {}", distance);
+
   Ok(distance)
 }
 
 pub fn problem1() -> Result<usize, Error> {
-  // let input = include_str!("./data/input.txt");
+  let input = include_str!("./data/input.txt");
   // let input = "^ENWWW(NEEE|SSE(EE|N))$";
-  let input = "^ENNWSWW(NEWS|)SSSEEN(WNSE|)EE(SWEN|)NNN$";
+  // let input = "^ENNWSWW(NEWS|)SSSEEN(WNSE|)EE(SWEN|)NNN$";
+  // let input = "^WNE$";
+
+  println!("Input: {}", input);
   run_problem1(input)
 }
 
