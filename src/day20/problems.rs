@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::HashMap;
 use super::super::utils::Error;
 use super::parser::parse;
 use super::analysis::{Position, count_rooms};
@@ -6,13 +6,18 @@ use super::analysis::{Position, count_rooms};
 fn run_problem1(input: &str) -> Result<usize, Error> {
   let nodes = parse(input);
 
-  println!("Nodes: {:?}", nodes);
+  // println!("Nodes: {:?}", nodes);
 
-  let mut map = HashSet::new();
+  let mut map = HashMap::new();
   let mut pos: Position = (0, 0);
-  let distance = count_rooms(&nodes, &mut pos, &mut map, 0);
+  map.insert(pos, 0);
+  let mut rooms = 0;
+  let distance = count_rooms(&nodes, &mut pos, &mut map, 0, &mut rooms);
+
+  let number_of_rooms = map.iter().filter(|(_, dist)| **dist >= 1000).count();
 
   println!("Distance: {}", distance);
+  println!("Number of Rooms: {}", number_of_rooms);
 
   Ok(distance)
 }
@@ -23,7 +28,7 @@ pub fn problem1() -> Result<usize, Error> {
   // let input = "^ENNWSWW(NEWS|)SSSEEN(WNSE|)EE(SWEN|)NNN$";
   // let input = "^WNE$";
 
-  println!("Input: {}", input);
+  // println!("Input: {}", input);
   run_problem1(input)
 }
 
