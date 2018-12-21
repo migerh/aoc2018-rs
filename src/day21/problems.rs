@@ -62,21 +62,17 @@ pub fn run(mut initial_state: State) -> Result<usize, Error> {
 
     let instruction = &parsed_program[ip as usize];
     let (op, p) = instruction;
-    if state.registers[2] == 28 { //op == "eqrr" && p[0] == 4 && p[1] == 0 && p[2] == 1 {
+    if state.registers[2] == 28 {
       let cancel = state.registers[4];
-      println!("4: {}, cycles: {}", cancel, i);
+      // println!("4: {}, cycles: {}", cancel, i);
       if !cancelling_numbers.insert(cancel) {
         println!("Smallest number that runs the program the longest: {}", last);
         break;
       }
       last = cancel;
     }
-    state.apply(op.as_str(), p[0], p[1], p[2])?;
+    state.apply(op.as_str(), p[0], p[1], p[2]);
     i += 1;
-
-    if i > 1_000_000_000_000 {
-      break;
-    }
   }
 
   Ok(i)
@@ -88,8 +84,4 @@ pub fn problem1() -> Result<usize, Error> {
   println!("i = {}, cycles = {}", 12213578, cycles);
 
   Ok(0)
-}
-
-pub fn problem2() -> Result<(), Error> {
-  Ok(())
 }

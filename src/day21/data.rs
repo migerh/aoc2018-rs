@@ -13,16 +13,26 @@ impl State {
     State { ip, registers }
   }
 
-  pub fn apply(&mut self, op: &str, a: i128, b: i128, c: i128) -> Result<(), Error> {
-    let op_map = op_map();
-
-    if op_map.contains_key(op) {
-      let f = op_map[op];
-      f(self, a, b, c);
-      self.registers[self.ip as usize] += 1;
-      Ok(())
-    } else {
-      Err(Error::new("Invalid instruction"))?
+  pub fn apply(&mut self, op: &str, a: i128, b: i128, c: i128) {
+    match op {
+      "addr" => {addr(self, a, b, c);},
+      "addi" => {addi(self, a, b, c);},
+      "mulr" => {mulr(self, a, b, c);},
+      "muli" => {muli(self, a, b, c);},
+      "banr" => {banr(self, a, b, c);},
+      "bani" => {bani(self, a, b, c);},
+      "borr" => {borr(self, a, b, c);},
+      "bori" => {bori(self, a, b, c);},
+      "setr" => {setr(self, a, b, c);},
+      "seti" => {seti(self, a, b, c);},
+      "gtir" => {gtir(self, a, b, c);},
+      "gtri" => {gtri(self, a, b, c);},
+      "gtrr" => {gtrr(self, a, b, c);},
+      "eqir" => {eqir(self, a, b, c);},
+      "eqri" => {eqri(self, a, b, c);},
+      "eqrr" => {eqrr(self, a, b, c);},
+      _ => {panic!("Illegal instruction!")}
     }
+    self.registers[self.ip as usize] += 1;
   }
 }
