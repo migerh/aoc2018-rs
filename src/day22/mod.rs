@@ -1,8 +1,8 @@
-use std::collections::{HashMap, BTreeMap};
+use std::collections::{HashMap, HashSet, BTreeSet};
 
 type Position = (u64, u64);
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, PartialOrd, Eq, Ord, Clone, Debug, Hash)]
 enum Tool {
   ClimbingGear,
   Torch,
@@ -49,6 +49,21 @@ pub fn problem1() {
   println!("Risk level: {}", result);
 }
 
+// type Seed = (u64, Position, Tool);
+
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Hash, Clone)]
+struct Seed {
+  pub time: u64,
+  pub pos: Position,
+  pub tool: Tool,
+}
+
+impl Seed {
+  pub fn new(time: u64, pos: Position, tool: Tool) -> Seed {
+    Seed { pos, tool, time }
+  }
+}
+
 fn get_forbidden_tool_from_risk(risk: u64) -> Tool {
   match risk {
     0 => Tool::Neither,
@@ -72,21 +87,21 @@ fn build_map(depth: u64, max: Position, target: Position) -> HashMap<Position, T
   map
 }
 
-fn find_neighbours(p: Position, max: Position) -> Vec<Position> {
+fn find_neighbours(p: Position, max: Position, visited: &HashSet<Position>) -> Vec<Position> {
   let mut neighbours = vec![];
-  if p.0 > 0 {
+  if p.0 > 0 && !visited.contains(&(p.0 - 1, p.1)) {
     neighbours.push((p.0 - 1, p.1));
   }
 
-  if p.0 + 1 < max.0 {
+  if p.0 + 1 < max.0 && !visited.contains(&(p.0 + 1, p.1)) {
     neighbours.push((p.0 + 1, p.1));
   }
 
-  if p.1 > 0 {
+  if p.1 > 0 && !visited.contains(&(p.0, p.1 - 1)) {
     neighbours.push((p.0, p.1 - 1));
   }
 
-  if p.1 + 1 < max.1 {
+  if p.1 + 1 < max.1 && !visited.contains(&(p.0, p.1 + 1)) {
     neighbours.push((p.0, p.1 + 1));
   }
 
@@ -115,25 +130,25 @@ fn manhattan(a: Position, b: Position) -> u64 {
 fn shortest_path(
   map: &HashMap<Position, Tool>,
   path_map: &mut HashMap<Position, (u64, Tool)>,
-  seed: (Position, Tool, u64),
+  visited: &HashSet<Position>,
+  seed: Seed,
   max: Position
-) -> Vec<(Position, Tool, u64)> {
-  let (pos, tool, distance) = seed;
-  let mut new_seeds = vec![];
-  let neighbours = find_neighbours(pos, max);
-  let forbidden_now = &map[&pos];
+) -> BTreeSet<Seed> {
+  let mut new_seeds = BTreeSet::new();
+  let neighbours = find_neighbours(seed.pos, max, visited);
+  let forbidden_now = &map[&seed.pos];
 
   for n in neighbours {
     let mut time = 1;
     let forbidden_then = &map[&n];
-    let new_tool = if tool == *forbidden_then {
+    let new_tool = if seed.tool == *forbidden_then {
       time = 8;
       find_tool(forbidden_now, forbidden_then)
     } else {
-      tool.clone()
+      seed.tool.clone()
     };
 
-    let new_distance = distance + time;
+    let new_distance = seed.time + time;
 
     // if our path is already longer thant what we have
     // at target, abandon that path
@@ -144,14 +159,14 @@ fn shortest_path(
     }
 
     if !path_map.contains_key(&n) {
-      new_seeds.push((n, new_tool.clone(), new_distance));
+      new_seeds.insert(Seed::new(new_distance, n, new_tool.clone()));
     }
 
     path_map
       .entry(n)
       .and_modify(|v| {
         if new_distance <= v.0 {
-          new_seeds.push((n, new_tool.clone(), new_distance));
+          new_seeds.insert(Seed::new(new_distance, n, new_tool.clone()));
           *v = (new_distance, new_tool.clone());
         }
       })
@@ -161,20 +176,36 @@ fn shortest_path(
   new_seeds
 }
 
-fn find_smallest_seed(seeds: &mut BTreeMap<u64, Vec<(Position, Tool, u64)>>) -> Option<(Position, Tool, u64)> {
+fn smallest_seed(seeds: &mut BTreeSet<Seed>) -> Option<Seed> {
   if seeds.is_empty() {
     return None;
   }
 
-  if let Some(smallest) = seeds.iter_mut().filter(|v| !v.1.is_empty()).next() {
-    smallest.1.pop()
-  } else {
-    None
+  let finding = seeds.iter().cloned().next();
+  // println!("Smallest seed: {:?}", finding);
+
+  if let Some(seed) = finding {
+    seeds.remove(&seed);
+    return Some(seed);
   }
+
+  None
+  // let mut smallest = 0;
+  // let mut time = std::u64::MAX;
+
+  // for (index, seed) in seeds.iter().enumerate() {
+  //   if seed.time < time {
+  //     time = seed.time;
+  //     smallest = index;
+  //   }
+  // }
+
+  // let seed = seeds.remove(smallest);
+  // Some(seed)
 }
 
 pub fn problem2() {
-  let max = (850, 850);
+  let max = (1100, 1100);
   let target = TARGET;
   let map = build_map(DEPTH, max, target);
 
@@ -182,29 +213,31 @@ pub fn problem2() {
   // let target = (10, 10);
   // let map = build_map(510, max, (10, 10));
 
-  let seed = ((0, 0), Tool::Torch, 0);
+  let seed = Seed::new(0, (0, 0), Tool::Torch);
   let mut path_map = HashMap::new();
   path_map.insert((0, 0), (0, Tool::Torch));
 
-  let seeds = shortest_path(&map, &mut path_map, seed, max);
-  let mut seed_map = BTreeMap::new();
-  for seed in &seeds {
-    seed_map.entry(seed.2)
-      .and_modify(|v: &mut Vec<(Position, Tool, u64)>| v.push(seed.clone()))
-      .or_insert(vec![seed.clone()]);
-  }
-  println!("Initial seeds: {:?}", seed_map);
+  let mut visited = HashSet::new();
+
+  let mut seeds = shortest_path(&map, &mut path_map, &visited, seed, max);
+  println!("Initial seeds: {:?}", seeds);
   let mut i = 0;
-  while let Some(seed) = find_smallest_seed(&mut seed_map) {
-    let new_seeds = shortest_path(&map, &mut path_map, seed, max);
-    for seed in &new_seeds {
-      seed_map.entry(seed.2)
-        .and_modify(|v: &mut Vec<(Position, Tool, u64)>| v.push(seed.clone()))
-        .or_insert(vec![seed.clone()]);
-    }
+  while let Some(seed) = smallest_seed(&mut seeds) {
+    // println!("Number of seeds: {}", seeds.len());
+    visited.insert(seed.pos);
+    // if visited.contains(&TARGET) {
+    //   break;
+    // }
+
+    let mut new_seeds = shortest_path(&map, &mut path_map, &visited, seed, max);
+    seeds.append(&mut new_seeds);
+
+    // if let Some(target_time) = path_map.get(&TARGET) {
+    //   break;
+    // }
 
     i += 1;
-    if i % 1_000_000 == 0 {
+    if i % 100_000 == 0 {
       println!("{}% covered", (100 * path_map.len()) / (max.0 * max.1) as usize);
       println!("Currently have {} seeds", seeds.len());
       println!("Result? {:?}", path_map.get(&TARGET));
