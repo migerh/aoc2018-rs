@@ -1,9 +1,8 @@
-use std::collections::{HashMap, HashSet, BinaryHeap};
-use std::cmp::Ordering;
+use std::collections::{HashMap, HashSet, BTreeMap};
 
 type Position = (u64, u64);
 
-#[derive(PartialEq, PartialOrd, Eq, Ord, Clone, Debug, Hash)]
+#[derive(PartialEq, PartialOrd, Eq, Ord, Clone, Debug, Hash, Copy)]
 enum Tool {
   ClimbingGear,
   Torch,
@@ -50,34 +49,30 @@ pub fn problem1() {
   println!("Risk level: {}", result);
 }
 
-// type Seed = (u64, Position, Tool);
-
-#[derive(PartialEq, Eq, Debug, Hash, Clone)]
-struct Seed {
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Hash, Clone, Copy)]
+struct Node {
   pub time: u64,
   pub pos: Position,
   pub tool: Tool,
 }
 
-impl PartialOrd for Seed {
-  fn partial_cmp(&self, other: &Seed) -> Option<Ordering> {
-      Some(self.cmp(other))
+impl Node {
+  pub fn new(time: u64, pos: Position, tool: Tool) -> Node {
+    Node { pos, tool, time }
   }
 }
 
-impl Ord for Seed {
-  fn cmp(&self, other: &Seed) -> Ordering {
-    other.time.cmp(&self.time)
-      .then_with(|| other.pos.cmp(&self.pos))
-  }
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Hash, Clone)]
+struct Visited {
+  pub pos: Position,
+  pub tool: Tool,
 }
 
-impl Seed {
-  pub fn new(time: u64, pos: Position, tool: Tool) -> Seed {
-    Seed { pos, tool, time }
+impl Visited {
+  pub fn new(pos: Position, tool: Tool) -> Visited {
+    Visited { pos, tool }
   }
 }
-
 fn get_forbidden_tool_from_risk(risk: u64) -> Tool {
   match risk {
     0 => Tool::Neither,
@@ -101,23 +96,18 @@ fn build_map(depth: u64, max: Position, target: Position) -> HashMap<Position, T
   map
 }
 
-fn find_neighbours(p: Position, max: Position) -> Vec<Position> {
+fn find_neighbours(p: Position) -> Vec<Position> {
   let mut neighbours = vec![];
   if p.0 > 0 {
     neighbours.push((p.0 - 1, p.1));
-  }
-
-  if p.0 + 1 < max.0 {
-    neighbours.push((p.0 + 1, p.1));
   }
 
   if p.1 > 0 {
     neighbours.push((p.0, p.1 - 1));
   }
 
-  if p.1 + 1 < max.1 {
-    neighbours.push((p.0, p.1 + 1));
-  }
+  neighbours.push((p.0 + 1, p.1));
+  neighbours.push((p.0, p.1 + 1));
 
   neighbours
 }
@@ -137,102 +127,65 @@ fn find_tool(forbidden_now: &Tool, forbidden_then: &Tool) -> Tool {
   }
 }
 
-fn manhattan(a: Position, b: Position) -> u64 {
-  ((a.0 as i64 - b.0 as i64).abs() + (a.1 as i64 - b.1 as i64).abs()) as u64
-}
-
-fn shortest_path(
-  map: &HashMap<Position, Tool>,
-  path_map: &mut HashMap<Position, (u64, Tool)>,
-  seed: &Seed,
-  seeds: &mut BinaryHeap<Seed>,
-  max: Position
-) {
-  let neighbours = find_neighbours(seed.pos, max);
-  let forbidden_now = &map[&seed.pos];
-
-  for n in neighbours {
-    let mut time = 1;
-    let forbidden_then = &map[&n];
-    let new_tool = if seed.tool == *forbidden_then {
-      time = 8;
-      find_tool(forbidden_now, forbidden_then)
-    } else {
-      seed.tool.clone()
-    };
-
-    let new_distance = seed.time + time;
-
-    // if our path is already longer thant what we have
-    // at target, abandon that path
-    if let Some(distance_at_target) = path_map.get(&TARGET) {
-      if distance_at_target.0 < new_distance {
-        continue;
-      }
-    }
-
-    if !path_map.contains_key(&n) {
-      seeds.push(Seed::new(new_distance, n, new_tool.clone()));
-    }
-
-    path_map
-      .entry(n)
-      .and_modify(|v| {
-        if new_distance <= v.0 {
-          seeds.push(Seed::new(new_distance, n, new_tool.clone()));
-          *v = (new_distance, new_tool.clone());
-        }
-      })
-      .or_insert((new_distance, new_tool.clone()));
+fn prioritized_node(backlog: &mut BTreeMap<u64, Vec<Node>>) -> Option<Node> {
+  if let Some(first_non_empty_log) = backlog.iter_mut().filter(|(_, v)| !v.is_empty()).next() {
+    Some(first_non_empty_log.1.remove(0))
+  } else {
+    None
   }
-}
-
-fn purge_seeds(seeds: &mut BinaryHeap<Seed>, current: &Seed) -> BinaryHeap<Seed> {
-  seeds.iter().cloned().filter(|seed| seed.pos != current.pos || (seed.pos == current.pos && seed.tool != current.tool)).collect()
 }
 
 pub fn problem2() {
-  let max = (2000, 2000);
+  let max = (1000, 1000);
   let target = TARGET;
   let map = build_map(DEPTH, max, target);
 
-  // let max = (35, 35);
+  // let max = (20, 20);
   // let target = (10, 10);
   // let map = build_map(510, max, (10, 10));
 
-  let seed = Seed::new(0, (0, 0), Tool::Torch);
-  let mut path_map = HashMap::new();
-  path_map.insert((0, 0), (0, Tool::Torch));
+  let mut visited: HashSet<Visited> = HashSet::new();
+  let mut backlog: BTreeMap<u64, Vec<Node>> = BTreeMap::new();
+  backlog.insert(0, vec![Node::new(0, (0, 0), Tool::Torch)]);
 
-  let mut visited = HashSet::new();
-  let mut seeds = BinaryHeap::new();
-  seeds.push(seed);
-
-  println!("Initial seeds: {:?}", seeds);
   let mut i = 0;
-  while let Some(seed) = seeds.pop() {
-    if visited.contains(&(seed.pos, seed.tool.clone())) {
+  while let Some(current) = prioritized_node(&mut backlog) {
+    i += 1;
+    if current.pos == target {
+      // We are at the target position and have a torch in hand
+      if current.tool == Tool::Torch {
+        println!("Found target in {} minutes", current.time);
+        break;
+      // we are at the target pos but have to switch to a torch
+      } else {
+        let new_node = Node::new(current.time + 7, current.pos, Tool::Torch);
+        println!("Final switch {:?}", new_node);
+        backlog.entry(current.time + 7)
+          .and_modify(|v| v.push(new_node))
+          .or_insert(vec![new_node]);
+      }
+    }
+
+    let v = Visited::new(current.pos, current.tool);
+    if visited.contains(&v) {
       continue;
     }
-    // println!("Number of seeds: {}", seeds.len());
-    seeds = purge_seeds(&mut seeds, &seed);
-    visited.insert((seed.pos, seed.tool.clone()));
-    // if visited.contains(&target) {
-    //   break;
-    // }
+    visited.insert(v);
 
-    shortest_path(&map, &mut path_map, &seed, &mut seeds, max);
-
-    i += 1;
-    if i % 100_000 == 0 {
-      println!("{}% covered", (100 * visited.len()) / (max.0 * max.1) as usize);
-      println!("Currently have {} seeds", seeds.len());
-      println!("Result? {:?}", path_map.get(&target));
+    let neighbours = find_neighbours(current.pos);
+    for n in neighbours {
+      let new_node = if current.tool != map[&n] {
+        Node::new(current.time + 1, n, current.tool)
+      } else {
+        Node::new(current.time + 7, current.pos, find_tool(&map[&current.pos], &map[&n]))
+      };
+      backlog.entry(new_node.time)
+        .and_modify(|v| v.push(new_node))
+        .or_insert(vec![new_node]);
     }
   }
 
-  let result = path_map.get(&target);
-  println!("Result: {:?} (after {} iterations)", result, i);
+  println!("Ran for {} iterations", i);
 }
 
 #[cfg(test)]
