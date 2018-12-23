@@ -101,21 +101,21 @@ fn build_map(depth: u64, max: Position, target: Position) -> HashMap<Position, T
   map
 }
 
-fn find_neighbours(p: Position, max: Position, visited: &HashSet<Position>) -> Vec<Position> {
+fn find_neighbours(p: Position, max: Position) -> Vec<Position> {
   let mut neighbours = vec![];
-  if p.0 > 0 && !visited.contains(&(p.0 - 1, p.1)) {
+  if p.0 > 0 {
     neighbours.push((p.0 - 1, p.1));
   }
 
-  if p.0 + 1 < max.0 && !visited.contains(&(p.0 + 1, p.1)) {
+  if p.0 + 1 < max.0 {
     neighbours.push((p.0 + 1, p.1));
   }
 
-  if p.1 > 0 && !visited.contains(&(p.0, p.1 - 1)) {
+  if p.1 > 0 {
     neighbours.push((p.0, p.1 - 1));
   }
 
-  if p.1 + 1 < max.1 && !visited.contains(&(p.0, p.1 + 1)) {
+  if p.1 + 1 < max.1 {
     neighbours.push((p.0, p.1 + 1));
   }
 
@@ -144,12 +144,11 @@ fn manhattan(a: Position, b: Position) -> u64 {
 fn shortest_path(
   map: &HashMap<Position, Tool>,
   path_map: &mut HashMap<Position, (u64, Tool)>,
-  visited: &HashSet<Position>,
   seed: &Seed,
   seeds: &mut BinaryHeap<Seed>,
   max: Position
 ) {
-  let neighbours = find_neighbours(seed.pos, max, visited);
+  let neighbours = find_neighbours(seed.pos, max);
   let forbidden_now = &map[&seed.pos];
 
   for n in neighbours {
@@ -189,7 +188,7 @@ fn shortest_path(
 }
 
 fn purge_seeds(seeds: &mut BinaryHeap<Seed>, current: &Seed) -> BinaryHeap<Seed> {
-  seeds.iter().cloned().filter(|seed| seed.pos != current.pos || (seed.pos == current.pos && seed.time > current.time)).collect()
+  seeds.iter().cloned().filter(|seed| seed.pos != current.pos || (seed.pos == current.pos && seed.tool != current.tool)).collect()
 }
 
 pub fn problem2() {
@@ -212,17 +211,20 @@ pub fn problem2() {
   println!("Initial seeds: {:?}", seeds);
   let mut i = 0;
   while let Some(seed) = seeds.pop() {
+    if visited.contains(&(seed.pos, seed.tool.clone())) {
+      continue;
+    }
     // println!("Number of seeds: {}", seeds.len());
     seeds = purge_seeds(&mut seeds, &seed);
-    visited.insert(seed.pos);
-    if visited.contains(&target) {
-      break;
-    }
+    visited.insert((seed.pos, seed.tool.clone()));
+    // if visited.contains(&target) {
+    //   break;
+    // }
 
-    shortest_path(&map, &mut path_map, &visited, &seed, &mut seeds, max);
+    shortest_path(&map, &mut path_map, &seed, &mut seeds, max);
 
     i += 1;
-    if i % 1_000_000 == 0 {
+    if i % 100_000 == 0 {
       println!("{}% covered", (100 * visited.len()) / (max.0 * max.1) as usize);
       println!("Currently have {} seeds", seeds.len());
       println!("Result? {:?}", path_map.get(&target));
