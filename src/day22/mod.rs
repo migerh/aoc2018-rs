@@ -1,4 +1,5 @@
-use std::collections::{HashMap, HashSet, BTreeSet};
+use std::collections::{HashMap, HashSet, BinaryHeap};
+use std::cmp::Ordering;
 
 type Position = (u64, u64);
 
@@ -51,11 +52,24 @@ pub fn problem1() {
 
 // type Seed = (u64, Position, Tool);
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Hash, Clone)]
+#[derive(PartialEq, Eq, Debug, Hash, Clone)]
 struct Seed {
   pub time: u64,
   pub pos: Position,
   pub tool: Tool,
+}
+
+impl PartialOrd for Seed {
+  fn partial_cmp(&self, other: &Seed) -> Option<Ordering> {
+      Some(self.cmp(other))
+  }
+}
+
+impl Ord for Seed {
+  fn cmp(&self, other: &Seed) -> Ordering {
+    other.time.cmp(&self.time)
+      .then_with(|| other.pos.cmp(&self.pos))
+  }
 }
 
 impl Seed {
@@ -131,10 +145,10 @@ fn shortest_path(
   map: &HashMap<Position, Tool>,
   path_map: &mut HashMap<Position, (u64, Tool)>,
   visited: &HashSet<Position>,
-  seed: Seed,
+  seed: &Seed,
+  seeds: &mut BinaryHeap<Seed>,
   max: Position
-) -> BTreeSet<Seed> {
-  let mut new_seeds = BTreeSet::new();
+) {
   let neighbours = find_neighbours(seed.pos, max, visited);
   let forbidden_now = &map[&seed.pos];
 
@@ -153,63 +167,37 @@ fn shortest_path(
     // if our path is already longer thant what we have
     // at target, abandon that path
     if let Some(distance_at_target) = path_map.get(&TARGET) {
-      if distance_at_target.0 < new_distance + manhattan(TARGET, n) - 2 {
+      if distance_at_target.0 < new_distance {
         continue;
       }
     }
 
     if !path_map.contains_key(&n) {
-      new_seeds.insert(Seed::new(new_distance, n, new_tool.clone()));
+      seeds.push(Seed::new(new_distance, n, new_tool.clone()));
     }
 
     path_map
       .entry(n)
       .and_modify(|v| {
         if new_distance <= v.0 {
-          new_seeds.insert(Seed::new(new_distance, n, new_tool.clone()));
+          seeds.push(Seed::new(new_distance, n, new_tool.clone()));
           *v = (new_distance, new_tool.clone());
         }
       })
       .or_insert((new_distance, new_tool.clone()));
   }
-
-  new_seeds
 }
 
-fn smallest_seed(seeds: &mut BTreeSet<Seed>) -> Option<Seed> {
-  if seeds.is_empty() {
-    return None;
-  }
-
-  let finding = seeds.iter().cloned().next();
-  // println!("Smallest seed: {:?}", finding);
-
-  if let Some(seed) = finding {
-    seeds.remove(&seed);
-    return Some(seed);
-  }
-
-  None
-  // let mut smallest = 0;
-  // let mut time = std::u64::MAX;
-
-  // for (index, seed) in seeds.iter().enumerate() {
-  //   if seed.time < time {
-  //     time = seed.time;
-  //     smallest = index;
-  //   }
-  // }
-
-  // let seed = seeds.remove(smallest);
-  // Some(seed)
+fn purge_seeds(seeds: &mut BinaryHeap<Seed>, current: &Seed) -> BinaryHeap<Seed> {
+  seeds.iter().cloned().filter(|seed| seed.pos != current.pos || (seed.pos == current.pos && seed.time > current.time)).collect()
 }
 
 pub fn problem2() {
-  let max = (1100, 1100);
+  let max = (2000, 2000);
   let target = TARGET;
   let map = build_map(DEPTH, max, target);
 
-  // let max = (20, 20);
+  // let max = (35, 35);
   // let target = (10, 10);
   // let map = build_map(510, max, (10, 10));
 
@@ -218,29 +206,26 @@ pub fn problem2() {
   path_map.insert((0, 0), (0, Tool::Torch));
 
   let mut visited = HashSet::new();
+  let mut seeds = BinaryHeap::new();
+  seeds.push(seed);
 
-  let mut seeds = shortest_path(&map, &mut path_map, &visited, seed, max);
   println!("Initial seeds: {:?}", seeds);
   let mut i = 0;
-  while let Some(seed) = smallest_seed(&mut seeds) {
+  while let Some(seed) = seeds.pop() {
     // println!("Number of seeds: {}", seeds.len());
+    seeds = purge_seeds(&mut seeds, &seed);
     visited.insert(seed.pos);
-    // if visited.contains(&TARGET) {
-    //   break;
-    // }
+    if visited.contains(&target) {
+      break;
+    }
 
-    let mut new_seeds = shortest_path(&map, &mut path_map, &visited, seed, max);
-    seeds.append(&mut new_seeds);
-
-    // if let Some(target_time) = path_map.get(&TARGET) {
-    //   break;
-    // }
+    shortest_path(&map, &mut path_map, &visited, &seed, &mut seeds, max);
 
     i += 1;
-    if i % 100_000 == 0 {
-      println!("{}% covered", (100 * path_map.len()) / (max.0 * max.1) as usize);
+    if i % 1_000_000 == 0 {
+      println!("{}% covered", (100 * visited.len()) / (max.0 * max.1) as usize);
       println!("Currently have {} seeds", seeds.len());
-      println!("Result? {:?}", path_map.get(&TARGET));
+      println!("Result? {:?}", path_map.get(&target));
     }
   }
 
