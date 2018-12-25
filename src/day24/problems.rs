@@ -95,12 +95,9 @@ pub fn problem1() -> Result<(), Error> {
     cleanup(&mut groups);
   }
 
+  print(&groups);
   let result: u64 = groups.iter().map(|v| v.units).sum();
-
   println!("Result: {}", result);
-  // print(&groups);
-  // println!("Pairings: {:?}", pairings);
-  // println!("{:?}", selection_order);
 
   Ok(())
 }

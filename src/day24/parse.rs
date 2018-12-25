@@ -53,15 +53,19 @@ fn parse_immunity(input: &str) -> Result<HashSet<AttackType>, ParseError> {
 fn parse_group(s: &str, affiliation: Affiliation) -> Result<Option<Group>, ParseError> {
   lazy_static!{
     static ref RE_group: Regex = Regex::new(r"(\d+) units each with (\d+) hit points (\(.*\))? with an attack that does (\d+) (\w+) damage at initiative (\d+)").unwrap();
+    static ref RE_group_nospecial: Regex = Regex::new(r"(\d+) units each with (\d+) hit points (with) an attack that does (\d+) (\w+) damage at initiative (\d+)").unwrap();
   }
 
-  if !RE_group.is_match(s) {
+  if !RE_group.is_match(s) && !RE_group_nospecial.is_match(s) {
     return Ok(None);
   }
 
-  let capture = match RE_group.captures(s) {
+  let capture = match RE_group_nospecial.captures(s) {
     Some(c) => c,
-    None => Err(ParseError::new("Could not parse group"))?
+    None => match RE_group.captures(s) {
+      Some(d) => d,
+      None => Err(ParseError::new("Could not parse group"))?
+    }
   };
 
   let units = capture[1].parse::<u64>()?;

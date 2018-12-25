@@ -68,6 +68,11 @@ impl Group {
     });
 
     if let Some(group) = available_enemies.get(0) {
+      // some special case that's not mentioned in the description
+      // but only with this my answer is accepted
+      if self.calculate_damage(group) == 0 {
+        return None;
+      }
       Some(group.id)
     } else {
       None
