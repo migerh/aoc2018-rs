@@ -34,7 +34,7 @@ impl Group {
     self.units * self.damage
   }
 
-  fn calculate_damage(&self, enemy: &Group) -> u64 {
+  pub fn calculate_damage(&self, enemy: &Group) -> u64 {
     let factor = if enemy.immunity.contains(&self.attack) {
       0
     } else if enemy.weakness.contains(&self.attack) {
@@ -46,17 +46,42 @@ impl Group {
     self.units * self.damage * factor
   }
 
-  // pub fn select_target(&self, enemies: &Vec<Group>) -> usize {
-  //   let ranked_enemies = enemies.iter()
-  //     .map(|v| )
-  //   // todo continue
-  //   0
-  // }
+  pub fn select_target(&self, groups: &Vec<Group>, already_selected: &Vec<usize>) -> Option<usize> {
+    let mut available_enemies = groups.iter()
+      .filter(|v| v.id != self.id)
+      .filter(|v| v.affiliation != self.affiliation)
+      .filter(|v| !already_selected.contains(&v.id))
+      .cloned()
+      .collect::<Vec<Group>>();
+
+    available_enemies.sort_unstable_by(|g, h| {
+      let damage_to_g = self.calculate_damage(g);
+      let damage_to_h = self.calculate_damage(h);
+
+      damage_to_h.cmp(&damage_to_g)
+        .then_with(|| {
+          h.effective_power().cmp(&g.effective_power())
+        })
+        .then_with(|| {
+          h.initiative.cmp(&g.initiative)
+        })
+    });
+
+    if let Some(group) = available_enemies.get(0) {
+      Some(group.id)
+    } else {
+      None
+    }
+  }
 
   pub fn target_selection_order(g: &Group, h: &Group) -> Ordering {
     let gep = g.effective_power();
     let hep = h.effective_power();
 
-    gep.cmp(&hep).then_with(|| g.initiative.cmp(&h.initiative))
+    hep.cmp(&gep).then_with(|| h.initiative.cmp(&g.initiative))
+  }
+
+  pub fn attack_order(g: &Group, h: &Group) -> Ordering {
+    h.initiative.cmp(&g.initiative)
   }
 }

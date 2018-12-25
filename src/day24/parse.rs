@@ -93,11 +93,13 @@ fn read_groups(input: &str, affiliation: Affiliation) -> Result<Vec<Group>, Erro
 
 fn load_infections() -> Result<Vec<Group>, Error> {
   let input = include_str!("./data/infection.txt");
+  // let input = include_str!("./data/ex_infection.txt");
   read_groups(input, Affiliation::Infection)
 }
 
 fn load_immune() -> Result<Vec<Group>, Error> {
   let input = include_str!("./data/immune_system.txt");
+  // let input = include_str!("./data/ex_immune.txt");
   read_groups(input, Affiliation::Immune)
 }
 
