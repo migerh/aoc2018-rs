@@ -29,7 +29,7 @@ mod day24;
 mod utils;
 
 fn run() -> Result<(), utils::Error> {
-  day24::problem1()?;
+  day24::problems::problem1()?;
 
   if false {
     println!("Past problems:");
