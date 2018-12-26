@@ -34,13 +34,17 @@ fn manhattan_distance(p: Position, q: Position) -> u64 {
   (p.0 - q.0).abs() as u64 + (p.1 - q.1).abs() as u64 + (p.2 - q.2).abs() as u64
 }
 
-pub fn problem1() -> Result<(), Error> {
+fn load_bots() -> Result<Vec<NanoBot>, ParseError> {
   let input = include_str!("./data/input.txt");
-  let bots = input
+
+  input
     .split("\n")
     .map(|s| NanoBot::from_str(s))
-    .collect::<Result<Vec<NanoBot>, ParseError>>()?;
+    .collect::<Result<Vec<NanoBot>, ParseError>>()
+}
 
+pub fn problem1() -> Result<(), Error> {
+  let bots = load_bots()?;
   let mut strongest = 0;
   let mut strongest_signal = 0;
   for (index, bot) in bots.iter().enumerate() {
@@ -61,6 +65,14 @@ pub fn problem1() -> Result<(), Error> {
     .count();
 
   println!("Strongest bot can reach {} other bots", number_in_reach);
+
+  Ok(())
+}
+
+pub fn problem2() -> Result<(), Error> {
+  let bots = load_bots()?;
+
+  println!("bots: {:?}", bots);
 
   Ok(())
 }
