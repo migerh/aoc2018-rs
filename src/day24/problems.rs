@@ -47,8 +47,9 @@ fn determine_attack_order(groups: &Vec<Group>) -> Vec<usize> {
   attack_order.iter().map(|v| v.id).collect::<Vec<usize>>()
 }
 
-fn attack_phase(groups: &mut Vec<Group>, pairings: &HashMap<usize, usize>) {
+fn attack_phase(groups: &mut Vec<Group>, pairings: &HashMap<usize, usize>) -> u64 {
   let attack_order = determine_attack_order(groups);
+  let mut total_units_lost = 0;
 
   for id in attack_order {
     let group = groups.iter().filter(|v| v.id == id).next().unwrap();
@@ -61,9 +62,12 @@ fn attack_phase(groups: &mut Vec<Group>, pairings: &HashMap<usize, usize>) {
       let damage = group.calculate_damage(target_group);
 
       let units_lost = damage / target_group.hitpoints;
+      total_units_lost += units_lost;
       groups[target_index].units -= min(target_group.units, units_lost);
     }
   }
+
+  total_units_lost
 }
 
 fn cleanup(groups: &mut Vec<Group>) {
@@ -86,18 +90,70 @@ fn battle_is_ongoing(groups: &Vec<Group>) -> bool {
   number_of_immunes != 0 && number_of_infections != 0
 }
 
-pub fn problem1() -> Result<(), Error> {
+fn simulate(boost: u64) -> Result<(Affiliation, u64), Error> {
   let mut groups = load_groups()?;
+
+  for group in &mut groups {
+    if group.affiliation == Affiliation::Immune {
+      group.damage += boost;
+    }
+  }
 
   while battle_is_ongoing(&groups) {
     let pairings = target_selection_phase(&groups);
-    attack_phase(&mut groups, &pairings);
+    let units_lost = attack_phase(&mut groups, &pairings);
+
+    if units_lost == 0 {
+      return Ok((Affiliation::Infection, 0));
+    }
+
     cleanup(&mut groups);
   }
 
-  print(&groups);
   let result: u64 = groups.iter().map(|v| v.units).sum();
+  Ok((groups[0].affiliation.clone(), result))
+}
+
+pub fn problem1() -> Result<(), Error> {
+  let (_, result) = simulate(0)?;
   println!("Result: {}", result);
+  Ok(())
+}
+
+pub fn problem2() -> Result<(), Error> {
+  let mut boost = 50_000;
+  let mut last_boost = 0;
+
+  while (last_boost as i64 - boost as i64).abs() > 5 {
+    println!("Boost: {}", boost);
+    let result = simulate(boost)?;
+
+    let tmp = last_boost;
+    last_boost = boost;
+
+    if result.0 == Affiliation::Immune {
+      if boost < tmp {
+        boost = boost - (tmp - boost) / 2;
+      } else {
+        boost = (tmp + boost) / 2;
+      }
+    } else {
+      if boost < tmp {
+        boost = (tmp + boost) / 2;
+      } else {
+        boost = boost + (boost - tmp) / 2;
+      }
+    }
+  }
+
+  for b in boost-5..boost+5 {
+    let result = simulate(b)?;
+    println!("Boost {} yields {:?}", b, result);
+    if result.0 == Affiliation::Immune {
+      println!("Result: {:?}", result);
+      break;
+    }
+  }
 
   Ok(())
 }
