@@ -4,17 +4,18 @@ use super::group::{Affiliation, Group};
 use std::collections::HashMap;
 use std::cmp::min;
 
-// fn print(groups: &Vec<Group>) {
-//   println!("Immune system");
-//   for group in groups.iter().filter(|v| v.affiliation == Affiliation::Immune) {
-//     println!("{} - {:?}", group.effective_power(), group);
-//   }
 
-//   println!("Infection");
-//   for group in groups.iter().filter(|v| v.affiliation == Affiliation::Infection) {
-//     println!("{} - {:?}", group.effective_power(), group);
-//   }
-// }
+fn _print(groups: &Vec<Group>) {
+  println!("Immune system");
+  for group in groups.iter().filter(|v| v.affiliation == Affiliation::Immune) {
+    println!("{} - {:?}", group.effective_power(), group);
+  }
+
+  println!("Infection");
+  for group in groups.iter().filter(|v| v.affiliation == Affiliation::Infection) {
+    println!("{} - {:?}", group.effective_power(), group);
+  }
+}
 
 fn target_selection_order(groups: &Vec<Group>) -> Vec<usize> {
   let mut target_selection_groups = groups.clone();
