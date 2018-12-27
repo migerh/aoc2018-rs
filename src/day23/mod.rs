@@ -1,10 +1,12 @@
 use std::str::FromStr;
 use super::utils::{ParseError, Error};
 use regex::Regex;
+use std::collections::HashMap;
+use std::cmp::max;
 
 type Position = (i64, i64, i64);
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct NanoBot {
   pub pos: Position,
   pub radius: u64,
@@ -69,10 +71,84 @@ pub fn problem1() -> Result<(), Error> {
   Ok(())
 }
 
+fn scale_bots(bots: &Vec<NanoBot>, scale: i64) -> Vec<NanoBot> {
+  let mut scaled_bots = bots.clone();
+
+  for bot in scaled_bots.iter_mut() {
+    bot.pos.0 /= scale;
+    bot.pos.1 /= scale;
+    bot.pos.2 /= scale;
+    bot.radius /= scale as u64;
+  }
+
+  scaled_bots
+}
+
+fn find_bots_in_range(bots: &Vec<NanoBot>, p: &Position) -> usize {
+  let mut in_range = 0;
+  for b in bots {
+    if manhattan_distance(b.pos, *p) <= b.radius + 1 {
+      in_range += 1;
+    }
+  }
+
+  in_range
+}
+
+fn find_intersection(bots: &Vec<NanoBot>, seed: Position, scale: i64) -> Position {
+  let scaled_bots = scale_bots(bots, scale);
+  // let from = -120_000_000 / scale;
+  // let to = 120_000_000 / scale;
+  let buffer = 40;
+  let from = -buffer;
+  let to = buffer;
+
+  let mut max_intersect = 0;
+  let mut closest_point = (std::i64::MAX, std::i64::MAX, std::i64::MAX);
+  let mut closest_manhattan = std::u64::MAX;
+  for z in from..to {
+    for y in from..to {
+      for x in from..to {
+        let p = (seed.0 + x, seed.1 + y, seed.2 + z);
+
+        let bots_in_range = find_bots_in_range(&scaled_bots, &p);
+
+        if bots_in_range >= max_intersect {
+          max_intersect = bots_in_range;
+
+          let manhattan = manhattan_distance((0, 0, 0), p);
+          if manhattan < closest_manhattan {
+            closest_manhattan = manhattan;
+            closest_point = p;
+          }
+        }
+      }
+    }
+    // println!("Layer {} of {}", z, to-from);
+  }
+
+  println!("Max intersection: {}", max_intersect);
+  println!("Closest point: {:?} (distance: {})", closest_point, closest_manhattan);
+
+  closest_point
+}
+
 pub fn problem2() -> Result<(), Error> {
   let bots = load_bots()?;
 
-  println!("bots: {:?}", bots);
+  let mut seed = (0, 0, 0);
+  // for i in 0..23 {
+  for i in 0..7 {
+    let scale = 10i64.pow(6-i);
+    println!("seed: {:?}, scale: {}", seed, scale);
+
+    seed = find_intersection(&bots, seed, scale);
+    seed.0 *= 10;
+    seed.1 *= 10;
+    seed.2 *= 10;
+  }
+  // seed = find_intersection(&bots, seed, 1_000_000);
+  println!("Seed: {:?}, distance: {}", seed, manhattan_distance((0, 0, 0), seed));
 
   Ok(())
 }
