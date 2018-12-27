@@ -1,4 +1,4 @@
-use std::num::ParseIntError;
+use std::num::{ParseIntError, ParseFloatError};
 use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
@@ -71,6 +71,12 @@ impl std::error::Error for ParseError {
 impl From<ParseIntError> for ParseError {
   fn from(_error: ParseIntError) -> Self {
     ParseError::new("Unable to parse integer")
+  }
+}
+
+impl From<ParseFloatError> for ParseError {
+  fn from(_error: ParseFloatError) -> Self {
+    ParseError::new("Unable to parse float")
   }
 }
 

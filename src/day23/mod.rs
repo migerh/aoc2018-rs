@@ -1,15 +1,20 @@
 use std::str::FromStr;
 use super::utils::{ParseError, Error};
 use regex::Regex;
-use std::collections::HashMap;
-use std::cmp::max;
+use std::fmt::{Formatter, Display};
 
-type Position = (i64, i64, i64);
+type Position = (f64, f64, f64);
 
 #[derive(Debug, Clone)]
 struct NanoBot {
   pub pos: Position,
-  pub radius: u64,
+  pub radius: f64,
+}
+
+impl Display for NanoBot {
+  fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+      write!(f, "Pos: ({}, {}, {}), Radius: {}", self.pos.0, self.pos.1, self.pos.2, self.radius)
+  }
 }
 
 impl FromStr for NanoBot {
@@ -25,15 +30,15 @@ impl FromStr for NanoBot {
       None => Err(ParseError::new("Could not parse bot"))?
     };
 
-    let pos = (capture[1].parse::<i64>()?, capture[2].parse::<i64>()?, capture[3].parse::<i64>()?);
-    let radius = capture[4].parse::<u64>()?;
+    let pos = (capture[1].parse::<f64>()?, capture[2].parse::<f64>()?, capture[3].parse::<f64>()?);
+    let radius = capture[4].parse::<f64>()?;
 
     Ok(NanoBot { pos, radius })
   }
 }
 
-fn manhattan_distance(p: Position, q: Position) -> u64 {
-  (p.0 - q.0).abs() as u64 + (p.1 - q.1).abs() as u64 + (p.2 - q.2).abs() as u64
+fn manhattan_distance(p: Position, q: Position) -> f64 {
+  (p.0 - q.0).abs() + (p.1 - q.1).abs() + (p.2 - q.2).abs()
 }
 
 fn load_bots() -> Result<Vec<NanoBot>, ParseError> {
@@ -48,7 +53,7 @@ fn load_bots() -> Result<Vec<NanoBot>, ParseError> {
 pub fn problem1() -> Result<(), Error> {
   let bots = load_bots()?;
   let mut strongest = 0;
-  let mut strongest_signal = 0;
+  let mut strongest_signal = 0f64;
   for (index, bot) in bots.iter().enumerate() {
     if bot.radius > strongest_signal {
       strongest_signal = bot.radius;
@@ -71,14 +76,14 @@ pub fn problem1() -> Result<(), Error> {
   Ok(())
 }
 
-fn scale_bots(bots: &Vec<NanoBot>, scale: i64) -> Vec<NanoBot> {
+fn scale_bots(bots: &Vec<NanoBot>, scale: f64) -> Vec<NanoBot> {
   let mut scaled_bots = bots.clone();
 
   for bot in scaled_bots.iter_mut() {
     bot.pos.0 /= scale;
     bot.pos.1 /= scale;
     bot.pos.2 /= scale;
-    bot.radius /= scale as u64;
+    bot.radius /= scale;
   }
 
   scaled_bots
@@ -87,7 +92,7 @@ fn scale_bots(bots: &Vec<NanoBot>, scale: i64) -> Vec<NanoBot> {
 fn find_bots_in_range(bots: &Vec<NanoBot>, p: &Position) -> usize {
   let mut in_range = 0;
   for b in bots {
-    if manhattan_distance(b.pos, *p) <= b.radius + 1 {
+    if manhattan_distance(b.pos, *p) <= b.radius + 1f64 {
       in_range += 1;
     }
   }
@@ -95,31 +100,58 @@ fn find_bots_in_range(bots: &Vec<NanoBot>, p: &Position) -> usize {
   in_range
 }
 
-fn find_intersection(bots: &Vec<NanoBot>, seed: Position, scale: i64) -> Position {
+fn find_closest_seed(seeds: &Vec<Position>) -> Position {
+  let mut closest = (0f64, 0f64, 0f64);
+  let mut manhattan = std::f64::MAX;
+
+  for seed in seeds {
+    let distance = manhattan_distance(*seed, (0f64, 0f64, 0f64));
+    if distance < manhattan {
+      manhattan = distance;
+      closest = *seed;
+    }
+  }
+
+  closest
+}
+
+fn find_intersection(bots: &Vec<NanoBot>, seeds: Vec<Position>, scale: f64) -> Vec<Position> {
   let scaled_bots = scale_bots(bots, scale);
   // let from = -120_000_000 / scale;
   // let to = 120_000_000 / scale;
-  let buffer = 40;
+  let buffer = 20;
   let from = -buffer;
   let to = buffer;
 
+  // for b in scaled_bots.iter() {
+  //   println!("{}", b);
+  // }
+
+  let threshold = 955;
   let mut max_intersect = 0;
-  let mut closest_point = (std::i64::MAX, std::i64::MAX, std::i64::MAX);
-  let mut closest_manhattan = std::u64::MAX;
+  let mut above = vec![];
+  let mut closest_point = (std::f64::MAX, std::f64::MAX, std::f64::MAX);
+  let mut closest_manhattan = std::f64::MAX;
   for z in from..to {
     for y in from..to {
       for x in from..to {
-        let p = (seed.0 + x, seed.1 + y, seed.2 + z);
+        for seed in seeds.iter() {
+          let p = (seed.0 + x as f64, seed.1 + y as f64, seed.2 + z as f64);
 
-        let bots_in_range = find_bots_in_range(&scaled_bots, &p);
+          let bots_in_range = find_bots_in_range(&scaled_bots, &p);
 
-        if bots_in_range >= max_intersect {
-          max_intersect = bots_in_range;
+          // if bots_in_range > threshold {
+          //   above.push(p);
+          // }
 
-          let manhattan = manhattan_distance((0, 0, 0), p);
-          if manhattan < closest_manhattan {
+          let manhattan = manhattan_distance((0f64, 0f64, 0f64), p);
+          let better_distance = bots_in_range == max_intersect && manhattan < closest_manhattan;
+          if bots_in_range > max_intersect || better_distance {
+            max_intersect = bots_in_range;
+
             closest_manhattan = manhattan;
             closest_point = p;
+            above = vec![closest_point];
           }
         }
       }
@@ -128,27 +160,32 @@ fn find_intersection(bots: &Vec<NanoBot>, seed: Position, scale: i64) -> Positio
   }
 
   println!("Max intersection: {}", max_intersect);
+  println!("Above 800: {}", above.len());
   println!("Closest point: {:?} (distance: {})", closest_point, closest_manhattan);
 
-  closest_point
+  above
 }
 
 pub fn problem2() -> Result<(), Error> {
   let bots = load_bots()?;
 
-  let mut seed = (0, 0, 0);
+  let mut seeds = vec![(0f64, 0f64, 0f64)];
   // for i in 0..23 {
-  for i in 0..7 {
-    let scale = 10i64.pow(6-i);
-    println!("seed: {:?}, scale: {}", seed, scale);
+  for i in 0..8 {
+    let scale = 10f64.powf(7f64-i as f64);
+    println!("seeds: {}, scale: {}", seeds.len(), scale);
 
-    seed = find_intersection(&bots, seed, scale);
-    seed.0 *= 10;
-    seed.1 *= 10;
-    seed.2 *= 10;
+    seeds = find_intersection(&bots, seeds, scale);
+
+    for seed in seeds.iter_mut() {
+      seed.0 *= 10f64;
+      seed.1 *= 10f64;
+      seed.2 *= 10f64;
+    }
   }
   // seed = find_intersection(&bots, seed, 1_000_000);
-  println!("Seed: {:?}, distance: {}", seed, manhattan_distance((0, 0, 0), seed));
+  // println!("Seed: {}, distance: {}", seeds.len(), manhattan_distance((0f64, 0f64, 0f64), seed));
+  
 
   Ok(())
 }
